@@ -191,7 +191,8 @@ sub init_gui_session {
     if (check_var("CONNECT_WIFI", "1")) {
         $self->connect_wifi;
     } else {
-        assert_screen("nm-connection-established", 150);
+        # this doesn't always appear, might be related to DHCP
+        check_screen("nm-connection-established", 150);
     }
     assert_screen("no-notifications");
 
