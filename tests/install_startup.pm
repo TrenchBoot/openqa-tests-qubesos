@@ -84,6 +84,26 @@ sub run {
         }
     } elsif (check_var('HEADS', '1')) {
         heads_boot_usb;
+    } elsif (!check_var('QUBES_OS_KS_URL', '')) {
+        my $ks_url = get_var('QUBES_OS_KS_URL');
+
+        # wait for bootloader to appear
+        assert_screen 'bootloader', 30;
+
+        # skip media verification and edit boot parameters
+        # select boot entry without media verification
+        send_key 'up';
+        # start editing it
+        send_key 'e';
+        # go to the line with kernel parameters
+        send_key 'down';
+        send_key 'down';
+        send_key 'down';
+        send_key 'end';
+        # append them
+        type_string " inst.sshd inst.ks=$ks_url";
+        # boot
+        send_key 'f10';
     }
 
     # wait for the installer welcome screen to appear
