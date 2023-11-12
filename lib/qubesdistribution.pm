@@ -53,11 +53,8 @@ sub init_consoles {
     } elsif (check_var('BACKEND', 'generalhw')) {
         # do the same as in openqa-serial script
         my $hostid = (get_var('GENERAL_HW_SOL_ARGS') =~ m/--hostid=(\d+)/)[0];
-        # don't need password, there is ssh-agent in place
         $self->add_console('root-virtio-terminal', 'ssh-serial',
-		{ hostname => "test-$hostid.testnet", password => "", use_ssh_agent => 1 });
-        $self->add_console('root-ssh-wifi', 'ssh-serial',
-		{ hostname => "192.168.0.100", password => "", use_ssh_agent => 1 });
+                { hostname => get_var('QUBES_OS_HOST_IP'), password => 'userpass' });
     }
 
     $self->add_console('install-shell',  'tty-console', {tty => 2});
