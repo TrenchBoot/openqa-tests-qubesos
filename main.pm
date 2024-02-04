@@ -65,6 +65,9 @@ if (get_var('ISO')) {
     }
 } elsif (get_var('TEST_AEM')) {
     autotest::loadtest "tests/aem.pm";
+} elsif (get_var('TEST_AEM_HW')) {
+    # we don't want to run this after "tests/startup.pm" because of TPM reset
+    autotest::loadtest "tests/aem_hw.pm";
 } else {
     autotest::loadtest "tests/startup.pm";
     if (get_var('DO_UPDATE')) {
