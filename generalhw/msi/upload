@@ -1,0 +1,47 @@
+#!/bin/bash
+
+image=$1
+ipkvm_ip=$2
+
+if [ ! -f "$image" ]; then
+    echo "error: couldn't find '$image'" 1>&2
+    exit 1
+fi
+
+image_name=$(basename "$image")
+
+function api() {
+    local api_url=$1
+    shift
+    curl --silent -X POST -k -u admin:admin "$@" "https://$ipkvm_ip/api/$api_url"
+}
+
+function can_fail() {
+    local reply=$("$@")
+    if [ "$(echo "$reply" | jq .ok )" = false ]; then
+        local error="$(echo "$reply" | jq -r .result.error)"
+        local error_msg="$(echo "$reply" | jq -r .result.error_msg)"
+        echo "Allowed error on '$@': $error: $error_msg"
+    fi
+}
+
+function cant_fail() {
+    local reply=$("$@")
+    if [ "$(echo "$reply" | jq .ok )" = false ]; then
+        local error="$(echo "$reply" | jq -r .result.error)"
+        local error_msg="$(echo "$reply" | jq -r .result.error_msg)"
+        echo "Fatal error on '$@': $error: $error_msg"
+        exit 1
+    fi
+}
+
+# disconnect MSD before uploading a new image
+can_fail api "msd/set_connected?connected=0"
+# remove image first if it already exists
+## can_fail api "msd/remove?image=$image_name"
+# upload it
+cant_fail api "msd/write?image=$image_name" -T "$image"
+# select the image
+cant_fail api "msd/set_params?image=$image_name&cdrom=0"
+# connect it
+cant_fail api "msd/set_connected?connected=1"
