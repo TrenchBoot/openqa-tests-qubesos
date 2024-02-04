@@ -84,6 +84,23 @@ sub run {
         }
     } elsif (check_var('HEADS', '1')) {
         heads_boot_usb;
+    } elsif (check_var('MACHINE', 'optiplex')) {
+        # http://<openqa-ip>:8080/iso/     -- mounted ISO image
+        # http://<openqa-ip>:8080/ipxe     -- iPXE script
+        # http://<openqa-ip>:8080/ipxe.pxe -- full-featured iPXE binary in PXE format
+        # http://<openqa-ip>:8080/ks.cfg   -- KickStart configuration file
+
+        my $openqa_url = get_var('QUBES_OS_OPENQA_URL');
+
+        setup_ipxe_prompt();
+
+        # download and give control to a full-featured iPXE binary in PXE format
+        type_string "chain $openqa_url/ipxe.pxe\n";
+
+        setup_ipxe_prompt();
+
+        # start QubesOS by processing instructions from iPXE script file
+        type_string "chain $openqa_url/ipxe\n";
     } elsif (!check_var('QUBES_OS_KS_URL', '')) {
         my $ks_url = get_var('QUBES_OS_KS_URL');
 
@@ -135,6 +152,28 @@ sub run {
         script_run("hwclock -w");
         select_console('installation', await_console=>0);
     }
+}
+
+sub setup_ipxe_prompt {
+    # send Ctrl-B proactively
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+
+    wait_serial "Press Ctrl-B", 30;
+
+    # enter iPXE command-line
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+    send_key 'ctrl-b';
+
+    wait_serial "iPXE>", 10;
+    type_string "dhcp\n";
+    wait_serial "iPXE>";
 }
 
 sub test_flags {

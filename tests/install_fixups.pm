@@ -125,6 +125,14 @@ sub run {
     script_run "$sed_enable_dom0_console_log /mnt/sysimage/boot/efi/EFI/qubes/grub.cfg";
     script_run "$sed_enable_dom0_console_log /mnt/sysimage/etc/default/grub";
 
+    if (check_var("MACHINE", "optiplex")) {
+        # GRUB hangs after "Welcome to GRUB!" message if gfxterm is requested
+        script_run "sed -i -e '/terminal_output gfxterm/s!^!#!' /mnt/sysimage/boot/grub2/grub.cfg";
+        # this to so that change doesn't disappear when GRUB is
+        # reinstalled (seems to happen automatically on first boot)
+        script_run "sed -i -e 's/gfxterm/console serial/' /mnt/sysimage/etc/default/grub";
+    }
+
     # log resulting bootloader configuration
     script_run "cat /mnt/sysimage/etc/default/grub $xen_cfg";
     script_run "cat /mnt/sysimage/boot/grub2/grub.cfg /mnt/sysimage/boot/efi/EFI/qubes/grub.cfg";
