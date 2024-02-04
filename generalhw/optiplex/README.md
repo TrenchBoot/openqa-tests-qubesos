@@ -325,6 +325,17 @@ means the jobs (`4` in this case) were scheduled successfully.
 
 Use "Dependencies" tab to see jobs which are part of the same run.
 
+#### Parameters
+
+These settings can be added to `openqa-cli` posting command to specify which
+packages to use.  Current default uses
+<https://dl.3mdeb.com/open-source-firmware/QubesOS/trenchboot_aem_v0.3/>.
+
+* `PACKAGES_BASE_URL` - where to look for AEM-related packages.
+* `AEM_VER` - version of `anti-evil-maid` package
+* `GRUB_VER` - version of `grub2-*` packages
+* `XEN_VER` - version of `xen-*` packages
+
 ### Verify the job
 
 Because things sometimes don't work as expected, it's better to check that it
