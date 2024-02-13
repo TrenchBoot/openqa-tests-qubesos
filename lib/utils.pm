@@ -22,7 +22,7 @@ use base 'Exporter';
 use Exporter;
 use testapi qw(check_screen wait_still_screen assert_screen send_key mouse_set wait_serial);
 
-our @EXPORT = qw(us_colemak colemak_us assert_screen_with_keypress move_to_lastmatch assert_serial);
+our @EXPORT = qw(us_colemak colemak_us assert_screen_with_keypress move_to_lastmatch assert_fuzzy_serial assert_serial);
 
 =head2 us_colemak
 
@@ -82,6 +82,28 @@ sub assert_serial {
     my $match = wait_serial($regexp, @_);
     if (!defined $match) {
         die "Failed to match serial output against regexp /$regexp/";
+    }
+    return $match;
+}
+
+=head2 assert_fuzzy_serial
+
+wait_serial() which fails the test on failure to match a serial output loosely
+by allowing characters to duplicate (might not handle all invocation
+forms correctly).  The parameter must be a plain text for this to work.
+
+=cut
+
+sub assert_fuzzy_serial {
+    my $pattern = shift;
+    my $loose = '';
+    for my $c (split '', $pattern) {
+        $loose .= $c . '{1,2}';
+    }
+
+    my $match = wait_serial($loose, @_);
+    if (!defined $match) {
+        die "Failed to match serial output against regexp /$loose/ (originally /$pattern/)";
     }
     return $match;
 }
