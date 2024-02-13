@@ -19,6 +19,7 @@ use base "installedtest";
 use strict;
 use testapi;
 use serial_terminal;
+use utils qw(assert_serial);
 use Data::Dumper;
 
 # AEM is installed without SRK password for simplicity.
@@ -67,7 +68,7 @@ sub run {
         clear_tpm();
 
         # using this to support re-installing AEM
-        wait_serial 'Welcome to GRUB!';
+        assert_serial 'Welcome to GRUB!';
         send_key 'end';
         send_key 'up';
         send_key 'ret';
@@ -115,14 +116,14 @@ sub clear_tpm {
     # this is for SeaBIOS
 
     # enter boot menu
-    wait_serial 'Press ESC for boot menu.';
+    assert_serial 'Press ESC for boot menu.';
     send_key 'esc';
 
     # enter TPM menu
-    wait_serial 'Select boot device:';
+    assert_serial 'Select boot device:';
     send_key 't';
 
-    my $owned = wait_serial qr/Ownership has( not)? been taken/, 5;
+    my $owned = assert_serial qr/Ownership has( not)? been taken/, 5;
     if (!defined $owned) {
         die "Failed to check TPM ownership status in TPM menu of SeaBIOS.";
     } elsif ($owned =~ 'Ownership has not been taken') {
@@ -130,11 +131,11 @@ sub clear_tpm {
         send_key 'esc';
     } else {
         # reset the TPM, to allow taking ownership
-        wait_serial 'c. Clear ownership';
+        assert_serial 'c. Clear ownership';
         send_key 'c';
-        wait_serial 'e. Enable the TPM';
+        assert_serial 'e. Enable the TPM';
         send_key 'e';
-        wait_serial 'a. Activate the TPM';
+        assert_serial 'a. Activate the TPM';
         send_key 'a';
     }
 
