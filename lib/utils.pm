@@ -20,9 +20,9 @@ package utils;
 use strict;
 use base 'Exporter';
 use Exporter;
-use testapi qw(check_screen wait_still_screen assert_screen send_key mouse_set);
+use testapi qw(check_screen wait_still_screen assert_screen send_key mouse_set wait_serial);
 
-our @EXPORT = qw(us_colemak colemak_us assert_screen_with_keypress move_to_lastmatch);
+our @EXPORT = qw(us_colemak colemak_us assert_screen_with_keypress move_to_lastmatch assert_serial);
 
 =head2 us_colemak
 
@@ -68,6 +68,22 @@ sub assert_screen_with_keypress {
         send_key('ctrl');
     }
     assert_screen($tag);
+}
+
+=head2 assert_serial
+
+wait_serial() which fails the test on failure (might not handle all invocation
+forms correctly).
+
+=cut
+
+sub assert_serial {
+    my $regexp = shift;
+    my $match = wait_serial($regexp, @_);
+    if (!defined $match) {
+        die "Failed to match serial output against regexp /$regexp/";
+    }
+    return $match;
 }
 
 sub _calculate_clickpoint {
