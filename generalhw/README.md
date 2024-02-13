@@ -2,6 +2,11 @@
 
 ![Setup diagram](./openqa-qubesos-setup.png).
 
+The first hardware setup was done for MSI at the time when `os-autoinst` lacked
+ability to connect to PiKVM's VNC.  This made it more complicated than a
+VNC-based setup for OptiPlex.  New setups should use VNC if possible (see
+[adding-vnc-setup.md](adding-vnc-setup.md) for how).
+
 * [msi](msi/README.md)
 
   - `ffmpeg`-based
@@ -32,6 +37,8 @@ Drive's passphrase: `lukspass`.
 SSH is kept running after tests are done (including after a reboot).  Password
 authorization is enabled.  Server's key is generated on installation, so expect
 the need to remove old keys from `~/.ssh/known_hosts`.
+
+See `README.md` files in subdirectories for more details.
 
 ## PiKVM preparation
 
