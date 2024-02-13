@@ -1,6 +1,3 @@
-This was the first version of the setup with running `ffmpeg` over SSH
-connection to PiKVM to capture video stream and serving `ks.cfg` on PiKVM.
-
 ![Setup diagram](../openqa-qubesos-setup.png)
 
 ## openQA part
