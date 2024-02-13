@@ -20,7 +20,7 @@ use strict;
 use testapi;
 use bootloader_setup;
 use serial_terminal qw(select_root_console);
-use utils qw(assert_serial);
+use utils qw(assert_fuzzy_serial assert_serial);
 
 sub run {
     pre_bootmenu_setup();
@@ -172,9 +172,9 @@ sub setup_ipxe_prompt {
     send_key 'ctrl-b';
     send_key 'ctrl-b';
 
-    assert_serial "iPXE>", 10;
+    assert_fuzzy_serial "iPXE>", 10;
     type_string "dhcp\n";
-    assert_serial "iPXE>";
+    assert_fuzzy_serial "iPXE>";
 }
 
 sub test_flags {
