@@ -56,6 +56,20 @@ if (check_var('MACHINE', 'optiplex')) {
     die "Don't know disk and partition names for '@{[ get_var('MACHINE') ]}' machine!";
 }
 
+my $drtm_kind;
+if (check_var('MACHINE', 'optiplex')) {
+    $drtm_kind = 'txt';
+} else {
+    die "Don't know DRTM type of '@{[ get_var('MACHINE') ]}' machine!";
+}
+
+my $bios_kind;
+if (check_var('MACHINE', 'optiplex')) {
+    $bios_kind = 'seabios';
+} else {
+    die "Don't know BIOS type of '@{[ get_var('MACHINE') ]}' machine!";
+}
+
 sub run {
     my ($self) = @_;
 
@@ -81,7 +95,9 @@ sub run {
         # log
         assert_script_run "sed -i -e 's/ guest_loglvl=all//' /etc/default/grub";
 
-        setup_acm();
+        if ($drtm_kind eq 'txt') {
+            setup_acm();
+        }
         send_packages();
         install_packages();
         setup_aem();
@@ -113,8 +129,14 @@ sub run {
 }
 
 sub clear_tpm {
-    # this is for SeaBIOS
+    if ($bios_kind eq 'seabios') {
+        clear_tpm_seabios();
+    } else {
+        die "Unhandled BIOS type in clear_tpm(): '$bios_kind'!";
+    }
+}
 
+sub clear_tpm_seabios {
     # enter boot menu
     assert_serial 'Press ESC for boot menu.';
     send_key 'esc';
