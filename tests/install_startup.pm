@@ -147,6 +147,26 @@ sub run {
         send_key 'ret';
 
         # GRUB2 should be booting from iPXE automatically.
+    } elsif (check_var('MACHINE', 'supermicro')) { # EFI version, saved for later, never gets executed
+        # http://<openqa-ip>:8080/iso/     -- mounted ISO image
+        # http://<openqa-ip>:8080/ipxe     -- iPXE script
+        # http://<openqa-ip>:8080/ks.cfg   -- KickStart configuration file
+
+        my $openqa_url = get_var('QUBES_OS_OPENQA_URL');
+
+        for my $i (0 .. 45) {
+            send_key 'f11';
+            if (wait_serial('select boot device', 1)) {
+                last;
+            }
+        }
+        send_key 'down';
+        send_key 'ret';
+
+        assert_serial "Shell>", 30;
+        type_string "fs0:\n";
+        wait_serial "FS0:", 30;
+        type_string "efi\\boot\\ipxe.efi dhcp && chain $openqa_url/ipxe\n";
     } elsif (!check_var('QUBES_OS_KS_URL', '')) {
         my $ks_url = get_var('QUBES_OS_KS_URL');
 
