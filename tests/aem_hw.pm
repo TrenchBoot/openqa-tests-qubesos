@@ -252,6 +252,7 @@ sub install_packages {
         'tpm-tools',
     );
     my @to_install = (
+        './anti-evil-maid-*.rpm',
         './python3-xen-*.rpm',
         './xen-*.rpm',
         './xen-hypervisor-*.rpm',
@@ -278,7 +279,6 @@ sub setup_aem {
     assert_script_run('rm -rf /var/lib/anti-evil-maid/aem');
 
     assert_script_run("grub2-install $boot_disk");
-    assert_script_run('dnf install -y ./anti-evil-maid-*.rpm');
     assert_script_run('anti-evil-maid-tpm-setup -z');
     assert_script_run("anti-evil-maid-install $boot_part");
 
