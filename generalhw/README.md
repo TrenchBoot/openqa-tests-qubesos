@@ -28,6 +28,19 @@ VNC-based setup for OptiPlex.  New setups should use VNC if possible (see
   - boots via iPXE which loads full-functional iPXE image that is capable of
     downloading kernel and initrd from the ISO and start it
 
+* [supermicro](supermicro/README.md)
+
+  - VNC-based
+  - power is managed through IPMI connection to motherboard's BMC
+  - input is handled by VNC (`kvmd-vnc`)
+  - Kickstart configuration is served by openQA server
+  - installation is done from HTTP served by openQA that mounts ISO
+  - reboots PiKVM in flash script for better stability
+  - updates a GRUB image in the flash script to use correct IP address of the
+    openQA server, then uploads it to PiKVM
+  - the GRUB image comes with `iPXE.lkrn` which downloads kernel and initrd
+    over the network and starts it
+
 ## Usage information
 
 Drive's passphrase: `lukspass`.

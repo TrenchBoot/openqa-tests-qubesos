@@ -1,0 +1,140 @@
+#!/bin/bash
+
+pikvm_ip=$1
+iso_image=$2
+# shellcheck disable=SC2034
+image_size=$3 # unused
+
+set -e
+
+function pikvm_cmd() {
+    sshpass -proot \
+            ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$pikvm_ip" \
+                "$@"
+}
+
+function reboot_pikvm() {
+    echo "flash: rebooting PiKVM..."
+    pikvm_cmd reboot
+    # reboot doesn't happen immediately
+    sleep 5s
+}
+
+function pikvm_api_get() {
+    local api_url=$1
+    shift
+    curl --silent -k -u admin:admin "$@" "https://$pikvm_ip/api/$api_url"
+}
+
+function pikvm_api() {
+    pikvm_api_get "$@" -X POST
+}
+
+# makes sure PiKVM is at least up or exits with an error
+function check_pikvm() {
+    echo "flash: checking PiKVM..."
+    for (( i = 0; i < 30; ++i )) do
+        if [ "$( pikvm_api_get "msd" | jq .ok )" = true ]; then
+            break
+        fi
+        sleep 1s
+    done
+    if [ "$i" = 30 ]; then
+        echo "flash: something is wrong with PiKVM"
+        exit 1
+    fi
+}
+
+if [ -z "$iso_image" ]; then
+    reboot_pikvm
+    check_pikvm
+
+    echo "No image to flash, successfully doing nothing."
+    exit 0
+fi
+
+if [ ! -f "$iso_image" ]; then
+    echo "error: couldn't find '$iso_image'" 1>&2
+    exit 1
+fi
+
+web_dir=/srv/www/openqa
+script_dir=$(dirname "$(readlink -f "$0")")
+openqa_ip=$(ip addr show eth0 | grep -Po 'inet \K[\d.]+')
+
+### Reboot PiKVM in a futile hope it will make it more stable ###
+### ========================================================= ###
+
+reboot_pikvm
+
+### Mount ISO and prepare other files accessed over the network ###
+### =========================================================== ###
+
+echo "flash: setting up data for network boot"
+
+sudo umount --quiet "$web_dir/iso" || true
+
+mkdir -p "$web_dir/iso"
+ln -fs "$script_dir/ks.cfg" "$web_dir/ks.cfg"
+sed "s/@@OPENQA_IP@@/$openqa_ip/" "$script_dir/ipxe" > "$web_dir/ipxe"
+
+sudo mount -t iso9660 -o ro,nodev,nosuid,noexec "$iso_image" "$web_dir/iso"
+
+### Update openQA's IP in drive with GRUB2 ###
+### ====================================== ###
+
+echo "flash: preparing disk image"
+
+# do not touch the file tracked by Git
+cp "$script_dir/grub-mixed.img" "/tmp/grub-mixed.img.patched"
+
+image_file=/tmp/grub-mixed.img.patched
+tmp_mount=/tmp/openqa-tmp-mount
+
+mkdir -p "$tmp_mount"
+sudo umount --quiet "$tmp_mount" || true
+
+sudo mount "$image_file" "$tmp_mount" -o offset=$(( 2048 * 512 )),umask=000
+sed -i "s!http://.*/ipxe!http://$openqa_ip:8080/ipxe!" "$tmp_mount/grub/grub.cfg"
+
+sudo umount "$tmp_mount"
+rmdir "$tmp_mount"
+
+### Upload drive with GRUB2 to PiKVM and mount it ###
+### ============================================= ###
+
+echo "flash: connecting disk image"
+
+image_name=$(basename "$image_file")
+
+function can_fail() {
+    local reply=$("$@")
+    if [ "$(echo "$reply" | jq .ok )" = false ]; then
+        local error="$(echo "$reply" | jq -r .result.error)"
+        local error_msg="$(echo "$reply" | jq -r .result.error_msg)"
+        echo "Allowed error on '$@': $error: $error_msg"
+    fi
+}
+
+function cant_fail() {
+    local reply=$("$@")
+    if [ "$(echo "$reply" | jq .ok )" = false ]; then
+        local error="$(echo "$reply" | jq -r .result.error)"
+        local error_msg="$(echo "$reply" | jq -r .result.error_msg)"
+        echo "Fatal error on '$@': $error: $error_msg"
+        exit 1
+    fi
+}
+
+check_pikvm
+
+# disconnect MSD before uploading a new image (might not be connected)
+can_fail pikvm_api "msd/set_connected?connected=0"
+# remove image first (might not exist)
+can_fail pikvm_api "msd/remove?image=$image_name"
+# upload it
+cant_fail pikvm_api "msd/write?image=$image_name" -T "$image_file"
+# select the image
+cant_fail pikvm_api "msd/set_params?image=$image_name&cdrom=0"
+# connect it
+cant_fail pikvm_api "msd/set_connected?connected=1"

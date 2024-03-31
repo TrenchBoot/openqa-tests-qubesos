@@ -1,0 +1,7 @@
+#!/bin/bash
+
+bmc_ip=$1
+
+# when tested manually ipmiconsole from freeipmi worked better then SoL in
+# ipmitool, hence using it (XXX: maybe in this case ipmitool would do no worse?)
+exec script -f -e -q -c "ipmiconsole -h '$bmc_ip' -u ADMIN -p ADMIN"

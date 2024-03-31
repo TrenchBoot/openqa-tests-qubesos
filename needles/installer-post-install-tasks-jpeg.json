@@ -1,0 +1,16 @@
+{
+  "area": [
+    {
+      "xpos": 190,
+      "ypos": 360,
+      "width": 81,
+      "height": 21,
+      "type": "match"
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "ENV-VERSION-4.2",
+    "installer-post-install-tasks"
+  ]
+}

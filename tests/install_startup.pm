@@ -102,6 +102,51 @@ sub run {
 
         # start QubesOS by processing instructions from iPXE script file
         type_string "chain $openqa_url/ipxe\n";
+    } elsif (check_var('MACHINE', 'supermicro')) {
+        # http://<openqa-ip>:8080/iso/     -- mounted ISO image
+        # http://<openqa-ip>:8080/ipxe     -- iPXE script
+        # http://<openqa-ip>:8080/ks.cfg   -- KickStart configuration file
+        #
+        # grub-mixed.img image connected to PiKVM.  TODO: automate via API.
+
+        my $menu_title = 'Please select boot device:';
+        # spaces are intentional to no pick up UEFI entry (could also use regexp for wait_serial)
+        my $entry_text = 'PiKVM CD-ROM Drive 0601    ';
+
+        my $menu = undef;
+        for my $i (0 .. 45) {
+            send_key 'f11';
+            $menu = wait_serial($entry_text, 1);
+            if (defined $menu) {
+                last;
+            }
+        }
+
+        if (!defined $menu) {
+            die "Failed to find menu containing CSM PiKVM entry";
+        }
+
+        # splitting by bars instead of newlines because there are no newlines
+        # in the menu drawn via escape sequences
+        my @menu_parts = split '\|', $menu;
+
+        my $menu_top = 0;
+        while ($menu_parts[$menu_top] !~ $menu_title) {
+            ++$menu_top;
+        }
+
+        my $pikvm_entry = $menu_top + 1;
+        while ($menu_parts[$pikvm_entry] !~ $entry_text) {
+            ++$pikvm_entry;
+        }
+
+        # it's `+ 4` and `+= 2` because each menu line contains 2 bars
+        for (my $i = $menu_top + 4; $i < $pikvm_entry; $i += 2) {
+            send_key 'down';
+        }
+        send_key 'ret';
+
+        # GRUB2 should be booting from iPXE automatically.
     } elsif (!check_var('QUBES_OS_KS_URL', '')) {
         my $ks_url = get_var('QUBES_OS_KS_URL');
 
