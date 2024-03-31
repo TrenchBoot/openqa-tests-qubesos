@@ -100,6 +100,8 @@ sub run {
         }
         send_packages();
         install_packages();
+        # XXX: workaround until trousers-changer gets the fix
+        assert_script_run "sed -i 's/-o pipefail//' /sbin/tpm_id /sbin/tpm2_id";
         setup_aem();
     } elsif (check_var('TEST_AEM_HW', 'first-run')) {
         # first reboot:
