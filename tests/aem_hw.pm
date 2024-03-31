@@ -225,6 +225,10 @@ sub send_packages {
         "xen-runtime-$xen_ver.fc37.x86_64.rpm",
     );
 
+    # remove RPMs uploaded by previous runs of the script to not pick them up
+    # in install_packages() later
+    assert_script_run('rm -f *.rpm');
+
     my @files;
     for my $i (0 .. $#packages) {
         my $package = $packages[$i];
