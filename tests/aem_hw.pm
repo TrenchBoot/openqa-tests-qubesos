@@ -82,7 +82,7 @@ sub run {
         clear_tpm();
 
         # using this to support re-installing AEM
-        assert_serial 'Welcome to GRUB!';
+        assert_serial 'Welcome to GRUB!|Press enter to boot the selected OS';
         send_key 'end';
         send_key 'up';
         send_key 'ret';
