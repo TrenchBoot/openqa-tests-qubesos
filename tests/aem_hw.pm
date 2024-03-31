@@ -43,13 +43,14 @@ use Data::Dumper;
 # PACKAGES_BASE_URL - where to look for AEM-related packages.
 # AEM_VER           - version of "anti-evil-maid" package
 # GRUB_VER          - version of "grub2-*" packages
-# XEN_VER           - version of "xen-*" packages
+# SKL_VER           - version of "secure-kernel-loader" package
+# XEN_VER           - version of "python3-xen-*" and "xen-*" packages
 
 # values of these are likely to match on different hardware, but
 # they are generally machine-specific, so don't assume anything
 my $boot_disk;
 my $boot_part;
-if (check_var('MACHINE', 'optiplex')) {
+if (check_var('MACHINE', 'optiplex') || check_var('MACHINE', 'supermicro')) {
     $boot_disk = '/dev/sda';
     $boot_part = '/dev/sda1';
 } else {
@@ -59,6 +60,8 @@ if (check_var('MACHINE', 'optiplex')) {
 my $drtm_kind;
 if (check_var('MACHINE', 'optiplex')) {
     $drtm_kind = 'txt';
+} elsif (check_var('MACHINE', 'supermicro')) {
+    $drtm_kind = 'skinit';
 } else {
     die "Don't know DRTM type of '@{[ get_var('MACHINE') ]}' machine!";
 }
@@ -66,6 +69,8 @@ if (check_var('MACHINE', 'optiplex')) {
 my $bios_kind;
 if (check_var('MACHINE', 'optiplex')) {
     $bios_kind = 'seabios';
+} elsif (check_var('MACHINE', 'supermicro')) {
+    $bios_kind = 'aptio';
 } else {
     die "Don't know BIOS type of '@{[ get_var('MACHINE') ]}' machine!";
 }
@@ -78,6 +83,9 @@ sub run {
         get_var('AEM_VER') or die "AEM_VER not set!";
         get_var('GRUB_VER') or die "GRUB_VER not set!";
         get_var('XEN_VER') or die "XEN_VER not set!";
+        if ($drtm_kind eq 'skinit') {
+            get_var('SKL_VER') or die "SKL_VER not set!";
+        }
 
         clear_tpm();
 
@@ -102,6 +110,9 @@ sub run {
         install_packages();
         # XXX: workaround until trousers-changer gets the fix
         assert_script_run "sed -i 's/-o pipefail//' /sbin/tpm_id /sbin/tpm2_id";
+        if ($drtm_kind eq 'skinit') {
+            setup_skl();
+        }
         setup_aem();
     } elsif (check_var('TEST_AEM_HW', 'first-run')) {
         # first reboot:
@@ -133,6 +144,8 @@ sub run {
 sub clear_tpm {
     if ($bios_kind eq 'seabios') {
         clear_tpm_seabios();
+    } elsif ($bios_kind eq 'aptio') {
+        clear_tpm_aptio();
     } else {
         die "Unhandled BIOS type in clear_tpm(): '$bios_kind'!";
     }
@@ -162,6 +175,49 @@ sub clear_tpm_seabios {
         assert_serial 'a. Activate the TPM';
         send_key 'a';
     }
+
+    # at this point the machine reboots
+}
+
+sub clear_tpm_aptio {
+    # enter boot menu
+    my $menu = undef;
+    for my $i (0 .. 45) {
+        send_key 'delete';
+        $menu = wait_serial('American Megatrends', 1);
+        if (defined $menu) {
+            last;
+        }
+    }
+
+    if (!defined $menu) {
+        die 'Failed to enter BIOS';
+    }
+
+    # switch to "Advanced" tab
+    send_key 'right';
+    assert_serial 'Trusted Computing';
+
+    # select and enter "Trusted Computing" submenu
+    send_key 'down';
+    send_key 'ret';
+    assert_serial 'TPM20 Device Found';
+
+    # select and run "Pending Operation" item
+    send_key 'down';
+    send_key 'down';
+    send_key 'down';
+    send_key 'ret';
+    assert_serial 'TPM Clear';
+
+    # pick "TPM Clear"
+    send_key 'down';
+    send_key 'ret';
+
+    # "save and exit" and its confirmation
+    send_key 'f4';
+    assert_serial 'Save configuration and exit';
+    send_key 'ret';
 
     # at this point the machine reboots
 }
@@ -204,6 +260,11 @@ sub setup_acm {
     assert_script_run("cp --update '$zip_root/$bin_fname' /boot");
 }
 
+sub setup_skl {
+    # XXX: workaround until AEM package learns to pick up SKL
+    assert_script_run "sed -i '/sinit_module_list=/s/\\*SINIT\\*\\.BIN/skl.bin/' /etc/grub.d/19_linux_xen_trenchboot";
+}
+
 sub send_packages {
     my $base_url = get_var('PACKAGES_BASE_URL');
     my $aem_ver = get_var('AEM_VER');
@@ -224,6 +285,11 @@ sub send_packages {
         "xen-licenses-$xen_ver.fc37.x86_64.rpm",
         "xen-runtime-$xen_ver.fc37.x86_64.rpm",
     );
+
+    if ($drtm_kind eq 'skinit') {
+        my $skl_ver = get_var('SKL_VER');
+        push @packages, "secure-kernel-loader-$skl_ver.fc37.x86_64.rpm";
+    }
 
     # remove RPMs uploaded by previous runs of the script to not pick them up
     # in install_packages() later
@@ -268,6 +334,10 @@ sub install_packages {
         './grub2-tools-*.rpm',
         './grub2-tools-minimal-*.rpm',
     );
+
+    if ($drtm_kind eq 'skinit') {
+        push @to_install, './secure-kernel-loader-*.rpm';
+    }
 
     assert_script_run("qubes-dom0-update --enablerepo=qubes-dom0-current-testing -qy @extra_deps");
     assert_script_run("dnf install -qy @to_install");
