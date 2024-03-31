@@ -193,8 +193,8 @@ If needles don't match due to incorrect colors, that's probably because `UYVY`
 format is used (see output of `v4l2-ctl --list-formats`).
 
 In this case, copy `kvmd.streamer.cmd` part of `/etc/kvmd/main.yaml` to
-`/etc/kvmd/override.yaml` and change `--format=` parameter to `RGB24`.  This
-part will look like this:
+`/etc/kvmd/override.yaml` and change `--format=` parameter to `RGB24` and
+`--encoder=` to `cpu`.  This part will look like this:
 
 ```yaml
 kvmd:
@@ -203,11 +203,14 @@ kvmd:
             - "/usr/bin/ustreamer"
             # ...
             - "--format=RGB24"
+            - "--encoder=cpu"
             # ...
 ```
 
-Now, if colors are complete off now, that might be due to `RGB` being treated
-as `BGR` or vice versa.  Need to patch `ustreamer`...
+Apply the changes by restarting `kvmd` with `systemctl restart kvmd`.
+
+Now, if colors are completely off now (e.g., red is green), that might be due
+to `RGB` being treated as `BGR` or vice versa.  Need to patch `ustreamer`...
 
 1. Clone [ustreamer].
 2. Checkout tag that correspond to appropriate version, so it should be
@@ -255,8 +258,8 @@ index 1c20e6b..a56a7f2 100644
 ```
 
 4. Compile: `make apps`
-5. Backup original: `cp /usr/bin/ustreamer{.bak}`
-6. Install modified version: `cp src/ustreamer.bin /usr/bin/ustreamer`
+5. Backup original: `cp /usr/bin/ustreamer /usr/bin/ustreamer.bak`
+6. Install modified version: `cp -f src/ustreamer.bin /usr/bin/ustreamer`
 7. Restart the service which executes `ustreamer`: `systemctl restart kvmd`
 
 [ustreamer]: https://github.com/pikvm/ustreamer/
