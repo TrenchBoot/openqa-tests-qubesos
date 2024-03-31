@@ -132,7 +132,7 @@ sub run {
 
     if (check_var('USBVM', 'none')) {
         # expect checkbox to be enabled by default and disable it
-        if (!check_var('BACKEND', 'generalhw') and !check_var('HDDMODEL', 'usb-storage')) {
+        if (!check_var('HDDMODEL', 'usb-storage')) {
             # FIXME: make USB HID work with sys-usb out of the box
             assert_and_click('firstboot-qubes-usbvm-enabled', timeout => 5);
         } else {
