@@ -259,10 +259,6 @@ sub install_packages {
         './anti-evil-maid-*.rpm',
         './python3-xen-*.rpm',
         './xen-*.rpm',
-        './xen-hypervisor-*.rpm',
-        './xen-libs-*.rpm',
-        './xen-licenses-*.rpm',
-        './xen-runtime-*.rpm',
         './grub2-tools-extra-*.rpm',
     );
     my @to_reinstall = (
