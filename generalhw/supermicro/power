@@ -1,0 +1,59 @@
+#!/bin/bash
+
+bmc_ip=$1
+action=$2
+
+if [ "$action" != pon ] && [ "$action" != poff ]; then
+    echo "Unexpected action: '$action'"
+    exit 1
+fi
+
+# if you want to run some openQA test without rebooting SUT to save time
+#echo "$0: not doing anything"
+#exit 0
+
+function ipmi_cmd() {
+    ipmitool -I lanplus -H "$bmc_ip" -U ADMIN -P ADMIN "$@"
+}
+
+function get_dut_state() {
+    local status=$(ipmi_cmd chassis power status)
+
+    case "$status" in
+        *'is on')  echo on ;;
+        *'is off') echo off ;;
+        *)         echo unknown ;;
+    esac
+}
+
+state=$(get_dut_state)
+if [ "$action" = "p$state" ]; then
+    # nothing to do
+    echo "Nothing to do: DUT is already '${action:1}'."
+    exit 0
+fi
+
+function leave()
+{
+    local code=$1
+    local msg=$2
+
+    echo "$msg"
+    exit "$code"
+}
+
+for i in {1..10}; do
+    # if there was no progress in 5 seconds, give it one more try
+    if [ "$i" = 1 ] || [ "$i" = 6 ]; then
+        ipmi_cmd chassis power "${action:1}"
+    fi
+
+    sleep 1
+    if [ "p$(get_dut_state)" = "$action" ]; then
+        leave 0 "Switched DUT's state: '$state' -> '${action:1}'."
+    fi
+done
+
+if [ "$i" == 10 ]; then
+    leave 1 "Failed to switch DUT ${action:1}."
+fi

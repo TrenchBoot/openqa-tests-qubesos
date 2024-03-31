@@ -1,0 +1,15 @@
+{
+  "properties": [],
+  "area": [
+    {
+      "xpos": 460,
+      "ypos": 320,
+      "width": 216,
+      "height": 46,
+      "type": "match"
+    }
+  ],
+  "tags": [
+    "login-prompt-user-selected"
+  ]
+}

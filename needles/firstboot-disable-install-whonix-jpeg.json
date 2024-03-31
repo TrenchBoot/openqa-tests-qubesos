@@ -1,0 +1,26 @@
+{
+  "area": [
+    {
+      "type": "match",
+      "height": 22,
+      "width": 178,
+      "xpos": 242,
+      "ypos": 76
+    },
+    {
+      "click_point": {
+        "xpos": 5,
+        "ypos": 5
+      },
+      "ypos": 178,
+      "type": "match",
+      "height": 17,
+      "width": 66,
+      "xpos": 249
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "disable-install-whonix"
+  ]
+}
