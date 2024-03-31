@@ -8,10 +8,10 @@ For details about how this setup works, see
 While logged into openQA server (unless you've installed and configured
 `openqa-cli` locally):
 
-Perform installation:
+Perform installation followed by AEM testing:
 
 ```
-openqa-cli api -X POST isos DISTRI=qubesos VERSION=4.2 FLAVOR=install-iso-supermicro ARCH=x86_64 BUILD=4.2.0
+openqa-cli api -X POST isos DISTRI=qubesos VERSION=4.2 FLAVOR=install-iso-supermicro ARCH=x86_64 BUILD=4.2.0 PACKAGES_BASE_URL=http://192.168.4.32:8080/aem AEM_VER=4.2.1-1 GRUB_VER=2.06-3 SKL_VER=0+e4f7e3207e-1 XEN_VER=4.17.2-7
 ```
 
 ISO name is generated as `ISO=Qubes-R%BUILD%-%ARCH%.iso`, you should also create
@@ -27,6 +27,19 @@ Output like
 means the jobs (`4` in this case) were scheduled successfully.
 
 Use "Dependencies" tab to see jobs which are part of the same run.
+
+#### Parameters
+
+These settings can be added to `openqa-cli` posting command to specify which
+packages to use.  Default uses
+<https://dl.3mdeb.com/open-source-firmware/QubesOS/trenchboot_aem_v0.3/> which
+does not support SKINIT.
+
+* `PACKAGES_BASE_URL` - where to look for AEM-related packages.
+* `AEM_VER` - version of `anti-evil-maid` package
+* `SKL_VER` - version of "`ecure-kernel-loader` package
+* `GRUB_VER` - version of `grub2-*` packages
+* `XEN_VER` - version of `xen-*` packages
 
 ### Verify the job
 
