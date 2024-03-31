@@ -244,9 +244,9 @@ sub install_packages {
         './grub2-tools-minimal-*.rpm',
     );
 
-    assert_script_run("qubes-dom0-update --enablerepo=qubes-dom0-current-testing -y @extra_deps");
-    assert_script_run("dnf install -y @to_install");
-    assert_script_run("dnf reinstall -y @to_reinstall");
+    assert_script_run("qubes-dom0-update --enablerepo=qubes-dom0-current-testing -qy @extra_deps");
+    assert_script_run("dnf install -qy @to_install");
+    assert_script_run("dnf reinstall -qy @to_reinstall");
 }
 
 sub setup_aem {
