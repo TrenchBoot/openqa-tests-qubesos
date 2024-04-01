@@ -321,27 +321,29 @@ sub install_packages {
         'trousers-changer',
         'tpm-tools',
     );
-    my @to_install = (
+    my @to_install_reinstall = (
         './anti-evil-maid-*.rpm',
         './python3-xen-*.rpm',
         './xen-*.rpm',
-        './grub2-tools-extra-*.rpm',
-    );
-    my @to_reinstall = (
-        './grub2-common-*.rpm',
-        './grub2-pc-*.rpm',
-        './grub2-pc-modules-*.rpm',
-        './grub2-tools-*.rpm',
-        './grub2-tools-minimal-*.rpm',
+        './grub2-*.rpm',
     );
 
     if ($drtm_kind eq 'skinit') {
-        push @to_install, './secure-kernel-loader-*.rpm';
+        push @to_install_reinstall, './secure-kernel-loader-*.rpm';
     }
 
     assert_script_run("qubes-dom0-update --enablerepo=qubes-dom0-current-testing -qy @extra_deps");
-    assert_script_run("dnf install -qy @to_install");
-    assert_script_run("dnf reinstall -qy @to_reinstall");
+
+    # Whether a particular package needs to be installed or reinstalled depends
+    # on what's currently installed in the system.  Installed versions also
+    # determine whether installing a single additional grub2 package will
+    # succeed because it might depend on others which dnf doesn't know how to
+    # find.  This is why try to do both operations as dnf doesn't seem to allow
+    # doing it in one command.  Reinstallation happens first, because it just
+    # skips packages which were never installed, potentially saving some time
+    # when this gets run initially.
+    assert_script_run("dnf reinstall -qy @to_install_reinstall");
+    assert_script_run("dnf install -qy @to_install_reinstall");
 }
 
 sub setup_aem {
