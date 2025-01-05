@@ -82,7 +82,7 @@ function leave()
 for i in {1..10}; do
     # if there was no progress in 5 seconds, give it one more try
     if [ "$i" = 1 ] || [ "$i" = 6 ]; then
-        rte_cmd ./rte_ctrl "$action"
+        rte_cmd rte_ctrl "$action"
     fi
 
     sleep 1
