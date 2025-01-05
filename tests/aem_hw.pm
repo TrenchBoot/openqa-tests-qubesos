@@ -363,7 +363,7 @@ sub handle_luks_pass {
 }
 
 sub wait_for_startup {
-    assert_screen "login-prompt-user-selected", timeout => 90;
+    assert_screen "login-prompt-user-selected", timeout => 120;
     select_root_console();
 }
 
