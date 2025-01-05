@@ -86,22 +86,7 @@ sub run {
     } elsif (check_var('HEADS', '1')) {
         heads_boot_usb;
     } elsif (check_var('MACHINE', 'optiplex')) {
-        # http://<openqa-ip>:8080/iso/     -- mounted ISO image
-        # http://<openqa-ip>:8080/ipxe     -- iPXE script
-        # http://<openqa-ip>:8080/ipxe.pxe -- full-featured iPXE binary in PXE format
-        # http://<openqa-ip>:8080/ks.cfg   -- KickStart configuration file
-
-        my $openqa_url = get_var('QUBES_OS_OPENQA_URL');
-
-        setup_ipxe_prompt();
-
-        # download and give control to a full-featured iPXE binary in PXE format
-        type_string "chain $openqa_url/ipxe.pxe\n";
-
-        setup_ipxe_prompt();
-
-        # start QubesOS by processing instructions from iPXE script file
-        type_string "chain $openqa_url/ipxe\n";
+        ipxe_boot('dasharo');
     } elsif (check_var('MACHINE', 'supermicro')) {
         # http://<openqa-ip>:8080/iso/     -- mounted ISO image
         # http://<openqa-ip>:8080/ipxe     -- iPXE script
@@ -214,7 +199,37 @@ sub run {
     }
 }
 
-sub setup_ipxe_prompt {
+sub ipxe_boot {
+    # Values:
+    #  * dasharo:
+    #    - need to pick menu entry to enter shell
+    #    - iPXE is capable of booting QubesOS
+    #  * <anything else> -- iPXE menu
+    #    - Ctrl-B enters the shell immediately
+    #    - iPXE is not capable of booting QubesOS, need to chain into a
+    #      full-featured version
+    my $flavour = shift;
+
+    # Assumptions:
+    #  * http://<openqa-ip>:8080/iso/     -- mounted ISO image
+    #  * http://<openqa-ip>:8080/ipxe     -- iPXE script
+    #  * http://<openqa-ip>:8080/ipxe.pxe -- full-featured iPXE binary in PXE format
+    #  * http://<openqa-ip>:8080/ks.cfg   -- KickStart configuration file
+    my $openqa_url = get_var('QUBES_OS_OPENQA_URL');
+
+    # download and start a full-featured iPXE binary in PXE format
+    run_ipxe_chain($flavour, "$openqa_url/ipxe.pxe");
+
+    # start QubesOS by processing instructions from iPXE script file
+    run_ipxe_chain($flavour, "$openqa_url/ipxe");
+}
+
+sub run_ipxe_chain {
+    # kind of firmware/iPXE combination
+    my $flavour = shift;
+    # parameter of the chain command
+    my $what = shift;
+
     # send Ctrl-B proactively
     send_key 'ctrl-b';
     send_key 'ctrl-b';
@@ -222,18 +237,28 @@ sub setup_ipxe_prompt {
     send_key 'ctrl-b';
     send_key 'ctrl-b';
 
-    assert_serial "Press Ctrl-B", 30;
+    assert_serial qr/Press Ctrl-B|Boot Menu/, 30;
 
-    # enter iPXE command-line
+    # enter iPXE command-line (does nothing in a menu)
     send_key 'ctrl-b';
     send_key 'ctrl-b';
     send_key 'ctrl-b';
     send_key 'ctrl-b';
     send_key 'ctrl-b';
 
-    assert_fuzzy_serial "iPXE>", 10;
-    type_string "dhcp\n";
-    assert_fuzzy_serial "iPXE>";
+    if ($flavour eq 'dasharo') {
+        # assumming iPXE shell is the last menu item
+        send_key 'end';
+        send_key 'ret';
+    } else {
+        # wait up to 10 seconds, then assume we're in a shell
+        assert_fuzzy_serial "iPXE>", 10;
+    }
+
+    # the use of && has a purpose: for some reason os-autoinst might have
+    # trouble feeding any input to DUT after running dhcp command
+    type_string "dhcp && chain $what\n";
+    assert_fuzzy_serial "... ok";
 }
 
 sub test_flags {
