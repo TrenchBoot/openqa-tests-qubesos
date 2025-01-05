@@ -111,7 +111,7 @@ sub run {
 
         my $menu_title = 'Please select boot device:';
         # spaces are intentional to no pick up UEFI entry (could also use regexp for wait_serial)
-        my $entry_text = 'PiKVM CD-ROM Drive 0601    ';
+        my $entry_text = 'PiKVM CD-ROM Drive \d{4}    ';
 
         my $menu = undef;
         for my $i (0 .. 45) {
