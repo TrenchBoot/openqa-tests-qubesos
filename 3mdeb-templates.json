@@ -21,13 +21,68 @@
          "version" : "4.2.3",
          "arch" : "x86_64"
       },
+
       {
          "settings" : [],
          "distri" : "qubesos",
-         "flavor" : "install-iso-optiplex",
+         "flavor" : "install-iso-optiplex-legacy",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-optiplex-uefi",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-vp46xx-legacy",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-vp46xx-uefi",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-hpt630v1-legacy",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-hpt630v1-uefi",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-hpt630v2-legacy",
+         "version" : "4.2.3",
+         "arch" : "x86_64"
+      },
+      {
+         "settings" : [],
+         "distri" : "qubesos",
+         "flavor" : "install-iso-hpt630v2-uefi",
          "version" : "4.2.3",
          "arch" : "x86_64"
       }
+
+
    ],
    "JobGroups" : [
       {
@@ -147,6 +202,36 @@
          ],
          "backend" : "generalhw",
          "name" : "optiplex"
+      },
+      {
+         "settings" : [
+            {
+               "value" : "vp46xx",
+               "key" : "+WORKER_CLASS"
+            }
+         ],
+         "backend" : "generalhw",
+         "name" : "vp46xx"
+      },
+      {
+         "settings" : [
+            {
+               "value" : "hpt630v1",
+               "key" : "+WORKER_CLASS"
+            }
+         ],
+         "backend" : "generalhw",
+         "name" : "hpt630v1"
+      },
+      {
+         "settings" : [
+            {
+               "value" : "hpt630v2",
+               "key" : "+WORKER_CLASS"
+            }
+         ],
+         "backend" : "generalhw",
+         "name" : "hpt630v2"
       }
    ],
    "JobTemplates" : [],
