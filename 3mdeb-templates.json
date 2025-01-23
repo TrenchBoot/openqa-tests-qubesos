@@ -1,7 +1,7 @@
 {
    "Products" : [
       {
-         "version" : "4.2",
+         "version" : "4.2.3",
          "arch" : "x86_64",
          "flavor" : "install-iso",
          "settings" : [],
@@ -11,21 +11,21 @@
          "flavor" : "install-iso-iommu",
          "settings" : [],
          "distri" : "qubesos",
-         "version" : "4.2",
+         "version" : "4.2.3",
          "arch" : "x86_64"
       },
       {
          "settings" : [],
          "distri" : "qubesos",
          "flavor" : "install-iso-hw",
-         "version" : "4.2",
+         "version" : "4.2.3",
          "arch" : "x86_64"
       },
       {
          "settings" : [],
          "distri" : "qubesos",
          "flavor" : "install-iso-optiplex",
-         "version" : "4.2",
+         "version" : "4.2.3",
          "arch" : "x86_64"
       }
    ],
