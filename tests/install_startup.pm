@@ -87,6 +87,8 @@ sub run {
         heads_boot_usb;
     } elsif (check_var('MACHINE', 'optiplex')) {
         ipxe_boot('dasharo');
+    } elsif (check_var('MACHINE', 'hpt630v1')) {
+        ipxe_boot('other');
     } elsif (check_var('MACHINE', 'supermicro')) {
         # http://<openqa-ip>:8080/iso/     -- mounted ISO image
         # http://<openqa-ip>:8080/ipxe     -- iPXE script
