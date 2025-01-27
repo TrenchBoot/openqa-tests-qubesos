@@ -88,7 +88,19 @@ sub run {
     } elsif (check_var('MACHINE', 'optiplex')) {
         ipxe_boot('dasharo');
     } elsif (check_var('MACHINE', 'hpt630v1')) {
-        ipxe_boot('other');
+        # No iPXE, QubesOS bootdrive has to be inserted
+        send_key 'f9';
+
+        # Assuming the installation drive is 2'nd on the bootmenu
+        for my $i (0 .. 2) {
+            send_key 'down';
+        }
+        send_key 'ret';
+
+        # Select first install option
+        send_key 'pageup';
+        send_key 'ret';
+
     } elsif (check_var('MACHINE', 'supermicro')) {
         # http://<openqa-ip>:8080/iso/     -- mounted ISO image
         # http://<openqa-ip>:8080/ipxe     -- iPXE script
