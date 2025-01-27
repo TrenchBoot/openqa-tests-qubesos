@@ -1,0 +1,15 @@
+{
+  "area": [
+    {
+      "xpos": 250,
+      "ypos": 180,
+      "width": 500,
+      "height": 60,
+      "type": "match"
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "bootmenu-hp"
+  ]
+}

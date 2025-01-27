@@ -92,11 +92,13 @@ sub run {
         assert_screen 'bootloader-hp', 10;
         send_key 'f9';
 
+        assert_screen 'bootmenu-hp', 10;
         # Assuming the installation drive is 2'nd on the bootmenu
         for my $i (0 .. 2) {
             send_key 'down';
         }
         send_key 'ret';
+
 
         assert_screen 'install-grub-qubes', 10;
         # Select first install option
