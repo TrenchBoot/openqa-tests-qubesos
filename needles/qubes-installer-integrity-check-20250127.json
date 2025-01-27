@@ -1,0 +1,15 @@
+{
+  "area": [
+    {
+      "xpos": 94,
+      "type": "match",
+      "width": 656,
+      "height": 34,
+      "ypos": 255
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "qubes-installer-integrity-check"
+  ]
+}

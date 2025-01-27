@@ -106,7 +106,7 @@ sub run {
 
         # This takes ~ 10 minutes and does not appear when booting manually.
         # Pressing esc skips this check
-        assert_screen 'qubes-installer-integrity-check';
+        assert_screen 'qubes-installer-integrity-check', 360;
         send_key 'esc';
 
     } elsif (check_var('MACHINE', 'supermicro')) {
