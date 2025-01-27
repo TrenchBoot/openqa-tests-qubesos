@@ -21,6 +21,9 @@ use testapi;
 
 sub run {
     assert_and_click 'installer-main-hub-target';
+    if (check_var("MACHINE", "hpt630v1")) {
+        assert_and_click 'installer-select-medium';
+    }
     assert_screen 'installer-disk-spoke';
     if (check_var('NUMDISKS', '2')) {
         assert_and_click 'installer-select-disk';
