@@ -104,6 +104,11 @@ sub run {
         send_key 'pgup';
         send_key 'ret';
 
+        # This takes ~ 10 minutes and does not appear when booting manually.
+        # Pressing esc skips this check
+        assert_screen 'qubes-installer-integrity-check';
+        send_key 'esc';
+
     } elsif (check_var('MACHINE', 'supermicro')) {
         # http://<openqa-ip>:8080/iso/     -- mounted ISO image
         # http://<openqa-ip>:8080/ipxe     -- iPXE script
