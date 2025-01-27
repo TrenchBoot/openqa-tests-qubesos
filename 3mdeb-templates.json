@@ -228,6 +228,10 @@
             {
                "value" : "hpt630v2",
                "key" : "+WORKER_CLASS"
+            },
+            {
+               "value" : "0",
+               "key" : "BOOT_MENU"
             }
          ],
          "backend" : "generalhw",
