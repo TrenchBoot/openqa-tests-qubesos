@@ -98,7 +98,7 @@ sub run {
         send_key 'ret';
 
         # Select first install option
-        send_key 'pageup';
+        send_key 'pgup';
         send_key 'ret';
 
     } elsif (check_var('MACHINE', 'supermicro')) {
