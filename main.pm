@@ -18,6 +18,7 @@
 use strict;
 use testapi;
 use autotest;
+use OpenQA::Test::RunArgs;
 
 require 'qubesdistribution.pm';
 testapi::set_distribution(qubesdistribution->new());
@@ -84,9 +85,11 @@ if (get_var('ISO')) {
         if (get_var("SELINUX_TEMPLATES")) {
             autotest::loadtest "tests/selinux_install.pm";
         }
-        if (get_var('GUIVM')) {
+        if (get_var('GUIVM') || get_var('GUIVM_VNC') || get_var('GUIVM_GPU')) {
             autotest::loadtest "tests/update_guivm.pm";
         }
+    } else {
+        autotest::loadtest "tests/fetch_packages_list.pm";
     }
     if (get_var("DEFAULT_TEMPLATE")) {
         autotest::loadtest "tests/switch_template.pm";
@@ -112,7 +115,7 @@ if (get_var('DO_GUIVM')) {
         autotest::loadtest "tests/update_templates.pm";
         autotest::loadtest "tests/update_post_templates.pm";
     }
-    if (get_var('GUIVM')) {
+    if (get_var('GUIVM') || get_var('GUIVM_VNC') || get_var('GUIVM_GPU')) {
         autotest::loadtest "tests/update_guivm.pm";
     }
 }
@@ -143,6 +146,9 @@ if (check_var('TEST_FIDO', '1')) {
     autotest::loadtest "tests/fido.pm";
 }
 
+if (check_var('SUSPEND_MODE', 'S0ix')) {
+    autotest::loadtest "tests/enable_s0ix.pm";
+}
 if (check_var('TEST_SUSPEND', '1')) {
     autotest::loadtest "tests/suspend.pm";
 }
@@ -156,10 +162,29 @@ if (get_var("WHONIX_INTERACTIVE")) {
 }
 
 if (get_var('SYSTEM_TESTS')) {
+    if (get_var('TEST_TEMPLATES', '') =~ /minimal/) {
+        autotest::loadtest "tests/system_tests_prepare_minimal.pm";
+    }
     if (check_var('SYSTEM_TESTS', 'qubesmanager.tests')) {
         autotest::loadtest "tests/system_tests_prepare_manager.pm";
     }
     autotest::loadtest "tests/system_tests.pm";
+}
+
+if (check_var('SECUREDROP_INSTALL', '1')) {
+    # Setup sys-whonix connection so it does not interfere later
+    autotest::loadtest("tests/whonix_firstrun.pm", name => "Setup_sys-whonix");
+
+    autotest::loadtest("tests/securedrop/install_pre_reboot.pm", name => "installing_SecureDrop");
+
+    # Setup sd-whonix connection
+    my $args = OpenQA::Test::RunArgs->new();
+    $args->{whonix_gw_override} = 'sd-whonix';
+    autotest::loadtest("tests/whonix_firstrun.pm", name =>"Setup_sd-whonix",  run_args => $args);
+
+    autotest::loadtest("tests/securedrop/install_reboot_and_update.pm", name => "reboot_and_finish_install");
+} elsif (check_var('SECUREDROP_TEST', "basic_functionality")) {
+    autotest::loadtest("tests/securedrop/basic_functionality.pm");
 }
 
 if (get_var('TEST_GUI_INTERACTIVE')) {
@@ -182,6 +207,10 @@ if (get_var("TEST_WINDOWS_GUI_INTERACTIVE")) {
 }
 
 if (get_var("GUI_TESTS")) {
+        autotest::loadtest "tests/desktop_linux_manager_create_qube.pm";
+        autotest::loadtest "tests/desktop_linux_manager_config.pm";
+        autotest::loadtest "tests/desktop_linux_manager_policy_edit.pm";
+
         autotest::loadtest "tests/qui_widgets_clipboard.pm";
         autotest::loadtest "tests/qui_widgets_devices.pm";
         autotest::loadtest "tests/qui_widgets_disk_space.pm";
@@ -189,14 +218,17 @@ if (get_var("GUI_TESTS")) {
         autotest::loadtest "tests/qui_widgets_notifications.pm";
         autotest::loadtest "tests/qui_widgets_update.pm";
 
-        autotest::loadtest "tests/qubesmanager_backuprestore.pm";
-        autotest::loadtest "tests/qubesmanager_createnewvm.pm";
+        if (check_var("VERSION", "4.2")) {
+            autotest::loadtest "tests/qubesmanager_createnewvm.pm";
+        }
         if (check_var("VERSION", "4.1")) {
             autotest::loadtest "tests/qubesmanager_globalsettings.pm";
         }
         autotest::loadtest "tests/qubesmanager_manager.pm";
         autotest::loadtest "tests/qubesmanager_templatemanager.pm";
         autotest::loadtest "tests/qubesmanager_vmsettings.pm";
+        autotest::loadtest "tests/qubesmanager_backuprestore.pm";
+
 }
 
 if (get_var('TEST_GUI_INTERACTIVE')) {
@@ -205,9 +237,8 @@ if (get_var('TEST_GUI_INTERACTIVE')) {
     autotest::loadtest "tests/collect_logs.pm";
 }
 
-if (get_var("STORE_HDD_1") || get_var("PUBLISH_HDD_1")) {
-    autotest::loadtest "tests/shutdown.pm";
-}
+autotest::loadtest "tests/shutdown.pm";
+
 
 1;
 

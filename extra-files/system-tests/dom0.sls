@@ -10,12 +10,16 @@ dom0-packages:
       - qubes-usb-proxy-dom0
       - syslinux
       - genisoimage
+      - grub2-pc-modules
+      # for mkefiboot
+      - lorax
       - pulseaudio-utils
       - btrfs-progs
       - python3-nose2
       - python3-objgraph
       - patch
-{% if grains['osrelease'] == '4.2' %}
+      - qubes-video-companion-dom0
+{% if grains['osrelease'] != '4.1' %}
       - xinput
 {% endif %}
       - openssl

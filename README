@@ -1,4 +1,4 @@
-OpenQA Tests for Qubes OS 
+OpenQA Tests for Qubes OS
 
 To install, clone this repo to /var/lib/openqa/tests/qubesos
 
@@ -35,7 +35,7 @@ Variables:
 
 Variables used in tests:
  - `INSTALL_TEMPLATES` - space separated list of template groups (`debian`, `whonix`), or `all`; can include also specific template versions (`debian-11`) - they they will be installed/reinstalled from online repo after the initial install process
- - `USBVM` - USB VM configuration: `none`, `sys-usb` (default), `sys-net` (combined with Net VM)
+ - `USBVM` - USB VM configuration: `none` (assert that already disabled by default), `disable` (disable explicitly), `sys-usb` (default), `sys-net` (combined with Net VM)
  - `KEYBOARD_LAYOUT` - install with non-default keyboard layout; currently only `us-colemak` value is supported
  - `LOCALE` - install with non-default locale; currently only `en_DK.utf8` value is supported
  - `SYSTEM_TESTS` - run system tests from those (space separated) modules, each module can be suffixed with ":TIMEOUT" (in seconds); tests are run using nose2
@@ -45,13 +45,16 @@ Variables used in tests:
  - `SALT_SYSTEM_TESTS` - run salt formula preparing for system tests (mostly install extra packages)
  - `UPDATE_TEMPLATES` - update listed template packages as a whole (space separated list of templates to update)
  - `TEST_TEMPLATES` - limit tests to listed templates only (space separated list of templates to test)
+ - `DEFAULT_TEMPLATE` - choose default template - on install jobs it's chosen in initial-setup, on update jobs all qubes that used default template are switched to this one
  - `UPDATE` - install updates in dom0 and all templates
  - `QUBES_TEST_EXTRA_INCLUDE`, `QUBES_TEST_EXTRA_EXCLUDE` - passed directly to the test environment
  - `TEST_GUI_INTERACTIVE` - simple GUI interactive tests (start application from menu etc)
  - `TEST_WINDOWS_GUI_INTERACTIVE` - simple GUI interactive tests for Windows with QWT installed
  - `WINDOWS_VERSION` - create Windows VM of specific version and install QWT inside (argument as for qvm-create-windows-qube)
  - `QWT_DOWNLOAD` - download specific QWT build (can be URL to iso or rpm file); otherwise qubes-windows-tools dom0 packages is installed from standard repositories
- - `GUIVM` - create GUI VM
+ - `GUIVM` - create GUI VM (sys-gui)
+ - `GUIVM_VNC` - create GUI VM (sys-gui-vnc)
+ - `GUIVM_GPU` - create GUI VM (sys-gui-gpu)
  - `KEEP_SCREENLOCKER` - do not disable xscreensaver (or whatever screenlocker is there)
  - `PARTITIONING` - partition layout ('standard', 'xfs', 'btrfs', 'default', 'unencrypted'); on install - set via installer options, later - created manually on sdb, and all templates are migrated there
  - `HEADS` - when set to `1`, the test will handle Heads boot menu. Currently relevant only with `BACKEND=generalhw`. It's supposed to be sed in "machine" definition.
@@ -61,3 +64,11 @@ Variables used in tests:
  - `KERNEL_VERSION` - which kernel flavor should be used - currently supported value is 'latest', which will switch to kernel-latest and kernel-latest-qubes-vm during update
  - `PIPEWIRE` - when set to `1`, VMs are set to use pipewire instead of
    pulseaudio, including switching native pulseaudio to pipewire-pulse.
+ - `SUSPEND_MODE` - what suspend mode should be used; default is `S3`, set to `S0ix` to use S0ix suspend
+ - `INSTALL_OEM` - do fully automated OEM installation
+ - `INSTALL_OEM_STARTUP` - start OEM installation, but still expect interactive prompts during installation
+ - `HID` - for generalhw tests, tell it whether `USB` hid is used (default) or `PS2` one; in the latter case, sys-usb is not supposed to have input-proxy allowed by default
+
+SecureDrop variables used in tests:
+ - `SECUREDROP_INSTALL` - when set to `1`, SecureDrop Workstation is installed
+ - `SECUREDROP_TEST` - when set with a value, SecureDrop tests are run on top of an existing installation

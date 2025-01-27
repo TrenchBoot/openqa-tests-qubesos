@@ -181,6 +181,12 @@ sub run {
         mouse_set(10, 10);
         mouse_click();
         mouse_hide();
+        sleep(2);
+    } else {
+        # sync mouse position, and do the first mouse move for Xorg to really
+        # detect (sub)device presence
+        mouse_hide();
+        sleep(2);
     }
 
     if (check_var("BACKEND", "qemu")) {
@@ -190,9 +196,9 @@ sub run {
         select_console('installation', await_console=>0);
     }
 
-    if (check_var("MACHINE", "hw7")) {
+    if (check_var("MACHINE", "hw7") or check_var("MACHINE", "hw12")) {
         select_root_console();
-        # broken RTC? battery dead?
+        # RTC battery not connected
         script_run("date -s @" . time());
         script_run("hwclock -w");
         select_console('installation', await_console=>0);

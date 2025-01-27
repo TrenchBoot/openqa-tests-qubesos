@@ -21,11 +21,17 @@ use testapi;
 
 
 sub run {
-    select_console('x11');
+    my ($self) = @_;
+
+    $self->select_gui_console;
     assert_screen "desktop";
 
     # open work VM settings and add "Document Viewer" application
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-work");
     if (check_var("VERSION", "4.2")) {
         # workaround for "settings" visible too early
@@ -47,28 +53,27 @@ sub run {
     }
     assert_and_click("vm-settings-app-evince");
     send_key('end');
+    sleep(1);
     check_screen("vm-settings-app-xterm", timeout => 10);
-    send_key_until_needlematch("vm-settings-app-xterm", 'up', 20, 5);
+    send_key_until_needlematch("vm-settings-app-xterm", 'up', 20, 7);
     assert_and_click("vm-settings-app-add");
     # wait for xterm to really be added, because that moves entries on the left
     assert_screen("vm-settings-app-xterm-added");
     if (!$text_editor_added) {
+        # if there was no "Geany" earlier, look for "text editor" now
         assert_and_click(["vm-settings-app-evince", "vm-settings-app-text-editor"]);
         send_key('end');
-        # let it scroll...
-        sleep(1);
+        wait_still_screen;
         assert_and_click("vm-settings-app-text-editor");
         assert_and_click("vm-settings-app-add");
+        wait_still_screen;
     }
     assert_and_click(["vm-settings-app-evince", "vm-settings-app-start-qube"]);
     if (match_has_tag("vm-settings-app-start-qube")) {
         # if start qube was clicked, scroll to home to make evince ("Document Viewer") visible
         send_key('home');
-    }
-    # let is scroll maybe, if evince not selected, click it again...
-    sleep(4);
-    if (check_screen("vm-settings-app-evince", 5)) {
-        click_lastmatch();
+        wait_still_screen;
+        assert_and_click("vm-settings-app-evince");
     }
     assert_and_click("vm-settings-app-add");
     if (check_screen("vm-settings-app-missing-firefox")) {
@@ -84,6 +89,10 @@ sub run {
 
     # now try to start "Document Viewer"
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-work");
     assert_and_click(["menu-vm-evince", "work-vm-atril"]);
     assert_screen(["work-evince", "work-atril"], timeout => 90);
@@ -97,7 +106,9 @@ sub run {
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    eval {
+        $self->select_gui_console;
+    };
     send_key('esc');
     send_key('esc');
     save_screenshot;

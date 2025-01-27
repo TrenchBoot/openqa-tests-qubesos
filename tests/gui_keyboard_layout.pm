@@ -31,14 +31,20 @@ Uses 'qwertya' string, as 'y' and 'a' positions differ in some layout (us, de, f
 
 =cut
 sub test_file_touch {
-    my ($guivm) = @_;
+    my ($self, $guivm) = @_;
     # touch a file with input from gui domain and then from target vm
     x11_start_program('touch e1qwertya', valid => 0);
-    x11_start_program('qvmrun work xterm', target_match => ['work-xterm', 'work-xterm-inactive', 'whonix-wizard-cancel'], match_timeout => 90);
-    # wait for possibly whonixcheck...
-    sleep 5;
-    if (check_screen('whonix-wizard-cancel', 5)) {
-        click_lastmatch();
+    x11_start_program('qvmrun work xterm', target_match => ['work-xterm', 'work-xterm-inactive', 'whonix-wizard-cancel', 'whonix-systemcheck-error'], match_timeout => 90);
+    if ($self->{template} =~ /whonix/) {
+        # wait for possibly whonixcheck...
+        sleep 5;
+        if (check_screen('whonix-wizard-cancel', 5)) {
+            click_lastmatch();
+        }
+        # and a message about wrong qube type
+        if (check_screen('whonix-systemcheck-error', 20)) {
+            click_lastmatch();
+        }
     }
     # ... then click xterm again
     assert_and_click(['work-xterm', 'work-xterm-inactive']);
@@ -57,31 +63,49 @@ sub test_file_touch {
         assert_script_run('qvm-run --nogui -p ' . $guivm . ' \'rm -f e1*\'; qvm-run -p work \'rm -f e1*\'');
     }
     assert_script_run('set +x');
-    select_console('x11');
+    $self->select_gui_console;
 }
 
+sub switch_layout {
+    my ($self, $layout) = @_;
+
+    if (check_var("DESKTOP", "kde")) {
+        # compare with LayoutList config set in run()
+        my $layout_idx;
+        $layout_idx = 0 if ($layout eq "us");
+        $layout_idx = 1 if ($layout eq "de");
+        die "unsupported layout $layout" unless defined $layout_idx;
+        x11_start_program("gdbus call -e -d org.kde.keyboard -o /Layouts -m org.kde.KeyboardLayouts.setLayout $layout_idx", valid => 0);
+    } else {
+        x11_start_program("setxkbmap $layout", valid => 0);
+    }
+}
+
+
 sub test_layout {
-    my ($guivm) = @_;
+    my ($self, $guivm) = @_;
 
     # set keyboard layout before VM start
     record_info('Layout: de', 'Switching keyboard layout before VM start');
-    x11_start_program('setxkbmap de', valid => 0);
+    $self->switch_layout("de");
     sleep 1;
 
-    test_file_touch($guivm);
+    $self->test_file_touch($guivm);
 
     record_info('Layout: us', 'Switching keyboard layout after VM start');
-    x11_start_program('setxkbmap us', valid => 0);
+    $self->switch_layout("us");
     sleep 1;
 
     if (!check_var('VERSION', '4.0')) {
-        test_file_touch($guivm);
+        $self->test_file_touch($guivm);
     }
 }
 
 sub run {
+    my ($self) = @_;
+
     # assert clean initial state
-    select_console('x11');
+    $self->select_gui_console;
 
     assert_screen "desktop";
 
@@ -98,6 +122,21 @@ sub run {
         assert_script_run("echo 'qubes.VMExecGUI * $guivm \@tag:guivm-$guivm allow' >> /etc/qubes/policy.d/25-tests.policy");
         assert_script_run("qvm-run -u root --nogui $guivm 'ln -s /usr/bin/qvm-run /usr/local/bin/qvmrun'");
     }
+
+    if (check_var("DESKTOP", "kde")) {
+        # https://euroquis.nl/kde/2024/09/14/keyboard.html
+        if ($guivm eq 'dom0') {
+            my $ret = script_run("sudo -u user sed -i -e 's/LayoutList=.*/LayoutList=us,de/' /home/user/.config/kxkbrc");
+            if ($ret != 0) {
+                assert_script_run("echo -e '[Layout]\nLayoutList=us,de' | sudo -u user tee /home/user/.config/kxkbrc");
+            }
+            assert_script_run("sudo -u user env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus gdbus emit -e -o /Layouts -s org.kde.keyboard.reloadConfig");
+        } else {
+            # TODO: do the above via qvm-run
+            die "not implemented"
+        }
+    }
+
     foreach (split /\n/, $templates) {
         next unless /Template/;
         s/\|.*//;
@@ -107,16 +146,17 @@ sub run {
         assert_script_run("qvm-shutdown --wait work");
         record_info($template, "Switching work qube to $template");
         assert_script_run("qvm-prefs work template $template");
-        select_console('x11');
+        $self->select_gui_console;
+        $self->{template} = $template;
 
-        test_layout($guivm);
+        $self->test_layout($guivm);
     }
-    select_console('x11');
+    $self->select_gui_console;
 }
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     save_screenshot;
     $self->SUPER::post_fail_hook;
     $self->save_and_upload_log('qvm-prefs dom0', 'qvm-prefs-dom0.log');

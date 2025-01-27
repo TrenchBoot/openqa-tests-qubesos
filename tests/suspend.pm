@@ -22,31 +22,43 @@ use networking;
 
 sub run {
     my ($self) = @_;
+    my ($counters_before, $requirements_before, $counters_after, $requirements_after);
 
-    select_console('x11');
+    select_console("x11");
     assert_screen "desktop";
-    x11_start_program('xterm');
+    x11_start_program("xterm");
     curl_via_netvm;
 
+    if (check_var("SUSPEND_MODE", "S0ix")) {
+        $counters_before = script_output("sudo cat /sys/kernel/debug/pmc_core/substate_residencies");
+        $requirements_before = script_output("sudo cat /sys/kernel/debug/pmc_core/substate_requirements");
+    }
+
     assert_script_run('sudo dmesg -n 8');
+    #script_run('qvm-run -pu root sys-net "command -v ethtool || dnf install -y ethtool"');
+    #script_run('qvm-run -pu root sys-net "intf=\$(ip route show default | cut -f 5 -d \" \"); ethtool \$intf wol g"');
     assert_script_run('sudo rtcwake -n -s 30');
     assert_script_run('sudo systemctl suspend');
     sleep(60);
     if (check_var('BACKEND', 'generalhw')) {
         power('on');
     }
-    sleep(15);
-    wait_screen_change {
-        send_key 'ctrl';
-    };
-    send_key('ctrl');
+    sleep(10);
+    # wait for the automatic prompt to expire - we may see it at the very end
+    # of the timeout, too late to type the passphrase in
+    wait_still_screen;
+    mouse_hide;
+    # then trigger it with a fresh timeout
+    my $retry = 3;
+    while (!wait_screen_change(sub { send_key 'ctrl' }) and $retry > 0) {
+        $retry -= 1;
+    }
     assert_screen('xscreensaver-prompt');
-    # unlock screen
     type_string($password);
     send_key('ret');
     sleep(10);
 
-    # stupid workaround for "ttyAMA ttyAMA1: 1 input overrun(s)" on RPi side
+    # stupid workaround for Xen's serial issues
     if (check_var("MACHINE", "hw2")) {
         type_string("xl debug-key h;sleep 0.2;xl debug-key h;xl debug-key h\n");
     }
@@ -57,6 +69,11 @@ sub run {
     # log some info
     script_run('xl list');
     script_run('virsh -c xen list --all');
+
+    if (check_var("SUSPEND_MODE", "S0ix")) {
+        $counters_after = script_output("sudo cat /sys/kernel/debug/pmc_core/substate_residencies");
+        $requirements_after = script_output("sudo cat /sys/kernel/debug/pmc_core/substate_requirements");
+    }
 
     # resumed and qrexec really works
     assert_script_run('qvm-run -p sys-net true');

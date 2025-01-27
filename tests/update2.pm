@@ -19,11 +19,12 @@ use base "installedtest";
 use strict;
 use testapi;
 use networking;
+use Mojo::File qw(path);
 
 sub run {
     my ($self) = @_;
 
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
     x11_start_program('xterm');
     send_key('alt-f10');
@@ -39,6 +40,7 @@ sub run {
     assert_script_run("curl " . autoinst_url('/files/extra-files.tar.gz.b64') . " | base64 -d | tar xz -C /root");
     if (check_var("BACKEND", "qemu")) {
         type_string "cd /root/extra-files\n";
+        type_string "rm -rf /usr/local/lib/python3*/site-packages/qubesteststub*\n";
         type_string "python3 ./setup.py install --prefix=/usr\n";
         type_string "cd -\n";
     }
@@ -62,7 +64,8 @@ sub run {
         assert_script_run("printf '  repo_onion: $repo_url\\n' >> $pillar_dir/init.sls");
         if (get_var('KEY_1')) {
             my $key_url = get_var('KEY_1');
-            assert_script_run("curl -f $key_url > /srv/salt/update/update-key.asc");
+            #assert_script_run("curl -f $key_url > /srv/salt/update/update-key.asc");
+            assert_script_run("curl -f $repo_url/key.pub > /srv/salt/update/update-key.asc");
             assert_script_run("printf '  key: update-key\\n' >> $pillar_dir/init.sls");
         }
     }
@@ -90,39 +93,35 @@ sub run {
         $targets =~ s/ /,/g;
     }
 
-    if (check_var('FLAVOR', 'kernel')) {
-        # disable custom repo for VMs - it is empty
+    # check if there is anything in the VM repo, otherwise disable it
+    # FIXME: don't hardcode bookworm here, maybe simply have some extra job setting
+    if (script_run("curl -vf $repo_url/vm/dists/bookworm/Release >/dev/null") != 0) {
         $repo_url = "";
     }
-    assert_script_run("sed -i 's%\@REPO_URL\@%$repo_url%' /root/extra-files/update/testrepo.py");
-    assert_script_run("sed -i \"s%\@REPO_KEY\@%\$(cat /srv/salt/update/update-key.asc | sed -z 's:\\n:\\\\n:g')%\" /root/extra-files/update/testrepo.py");
-    assert_script_run("sed -i 's%\@QUBES_VER\@%" . get_var('VERSION') . "%' /root/extra-files/update/testrepo.py");
-    assert_script_run("sed -i 's%\@WHONIX_REPO\@%" . get_var('WHONIX_REPO', 'testers') . "%' /root/extra-files/update/testrepo.py");
-    assert_script_run("cp /root/extra-files/update/testrepo.py /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/");
+    assert_script_run("sed -i 's%\@REPO_URL\@%$repo_url%' /root/extra-files/update/atestrepo.py");
+    assert_script_run("sed -i \"s%\@REPO_KEY\@%\$(cat /srv/salt/update/update-key.asc | sed -z 's:\\n:\\\\n:g')%\" /root/extra-files/update/atestrepo.py");
+    assert_script_run("sed -i 's%\@QUBES_VER\@%" . get_var('VERSION') . "%' /root/extra-files/update/atestrepo.py");
+    assert_script_run("sed -i 's%\@WHONIX_REPO\@%" . get_var('WHONIX_REPO', 'testers') . "%' /root/extra-files/update/atestrepo.py");
+    assert_script_run("cp /root/extra-files/update/atestrepo.py /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/");
     if (get_var("SALT_SYSTEM_TESTS")) {
         assert_script_run("cp /root/extra-files/update/systemtests.py /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/");
     }
 
-    assert_script_run("script -c 'qubes-vm-update --max-concurrency=2 $targets --show-output' -a -e qubesctl-upgrade.log", timeout => 14400);
+    assert_script_run("script -c 'qubes-vm-update --log DEBUG --max-concurrency=2 $targets --show-output' -a -e qubesctl-upgrade.log", timeout => 14400);
     upload_logs("qubesctl-upgrade.log");
 
     # disable all states
     script_run('rm -f /srv/salt/_tops/base/*');
-    script_run('rm -f /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/testrepo.py');
+    script_run('rm -f /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/atestrepo.py');
     script_run('rm -f /usr/lib/python3.*/site-packages/vmupdate/agent/source/plugins/systemtests.py');
 
     # log package versions
     my $list_tpls_cmd = 'qvm-template list --installed --machine-readable | awk -F\'|\' \'{ print "qubes-template-" $2 "-" gensub("0:", "", 1, $3) }\'';
     $self->save_and_upload_log("(rpm -qa qubes-template-*; $list_tpls_cmd)", 'template-versions.txt');
-    $self->save_and_upload_log('rpm -qa', 'dom0-packages.txt');
-    my $templates = script_output('qvm-ls --raw-data --fields name,klass');
-    foreach (split /\n/, $templates) {
-        next unless /Template/;
-        s/\|.*//;
-        $self->save_and_upload_log("qvm-run --no-gui -ap $_ 'rpm -qa; dpkg -l; true'",
-                "template-$_-packages.txt", {timeout =>90});
-        assert_script_run("qvm-shutdown --wait $_", timeout => 90);
-    }
+
+    $self->upload_packages_versions;
+
+    $self->save_and_upload_log('journalctl -b', 'journalctl.log', {timeout => 120});
 
     if (check_var('RESTART_AFTER_UPDATE', '1')) {
         type_string("reboot\n");

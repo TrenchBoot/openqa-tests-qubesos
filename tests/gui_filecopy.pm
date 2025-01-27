@@ -21,11 +21,17 @@ use testapi;
 
 
 sub run {
-    select_console('x11');
+    my ($self) = @_;
+
+    $self->select_gui_console;
     assert_screen "desktop";
 
     # try to start "Text Editor" (gedit)
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-work");
     wait_still_screen();
     assert_and_click("menu-vm-text-editor");
@@ -42,7 +48,12 @@ sub run {
     send_key("ctrl-q");
 
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-work");
+    wait_still_screen();
     assert_and_click("menu-vm-Files");
 
     # copy to another VM
@@ -59,14 +70,19 @@ sub run {
     assert_and_click("files-move-to-other");
     assert_screen("file-copy-prompt");
     type_string("personal");
-    assert_and_click("file-copy-prompt-confirm");
+    assert_screen("file-copy-prompt-confirm");
+    send_key("ret");
     # wait for progress dialog to finish
     sleep(2);
 
     # verify, and then open in DispVM
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-personal");
-    wait_still_screen();
+    wait_still_screen(stilltime => 10);
     assert_and_click("menu-vm-Files");
     assert_screen("personal-files", timeout => 90);
     assert_and_click("files-qubesincoming", dclick => 1);
@@ -82,7 +98,7 @@ sub run {
         wait_still_screen();
     }
     assert_and_click("files-open-in-dispvm");
-    assert_screen("disp-text-editor", timeout => 90);
+    assert_screen("disp-text-editor", timeout => 120);
     # verify content
     assert_screen("text-editor-qubes-url");
     send_key("ctrl-q");

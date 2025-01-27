@@ -29,7 +29,7 @@ sub setup_user {
     assert_screen 'installer-user';
     type_string 'user';
     send_key 'tab';
-    if (get_var('VERSION') =~ /^3|4\.2/) {
+    if (!check_var('VERSION', '4.1')) {
         send_key 'tab';
     }
     type_string $password;
@@ -60,21 +60,36 @@ sub run {
             send_key "down";
             send_key "down";
             send_key "down";
+            send_key "down";
             send_key "ret";
         }
     }
 
+    my @luks_needles = ("luks-prompt", "firstboot-not-ready");
     if (check_var('BACKEND', 'generalhw')) {
-        # force plymouth to show on HDMI output too
-        if (!check_screen(["luks-prompt", "firstboot-not-ready"], 120)) {
-            send_key 'esc';
-            send_key 'esc';
-            sleep 1;
+        push(@luks_needles, "plymouth-text-no-prompt");
+        if (check_var('HEADS', '1') and !check_var("HEADS_DISK_UNLOCK", "1")) {
+            # "plymouth-text-no-prompt" would be whole blank here, so fallback
+            # to the old approach with check_screen timeout
+            if (!check_screen(\@luks_needles, 180)) {
+                # force plymouth to show on HDMI output too
+                send_key 'esc';
+                send_key 'esc';
+                sleep 5;
+            }
         }
     }
 
     # handle both encrypted and unencrypted setups
-    assert_screen ["luks-prompt", "firstboot-not-ready"], 180;
+    assert_screen(\@luks_needles, 300);
+    if (match_has_tag("plymouth-text-no-prompt")) {
+        # force plymouth to show on HDMI output too
+        send_key 'esc';
+        send_key 'esc';
+        sleep 5;
+    }
+    # handle both encrypted and unencrypted setups
+    assert_screen(["luks-prompt", "firstboot-not-ready"], 60);
 
     if (match_has_tag('luks-prompt')) {
         if (check_var("HEADS_DISK_UNLOCK", "1")) {
@@ -86,11 +101,15 @@ sub run {
 
     assert_screen "firstboot-not-ready", 180;
 
-    if (check_var('BACKEND', 'generalhw')) {
-        # wiggle mouse a bit, for some reason needed...
-        mouse_set(0, 0);
-        mouse_hide;
-    }
+    # libinput creates a virtual subdevice on a first tablet move event,
+    # and it takes long enough that some events immediately after that
+    # might get ignored. Avoid the issue by sending first move in a
+    # controlled way and waiting a bit to let it initialize.
+    mouse_set(100, 100);
+    mouse_click();
+    sleep(1);
+    mouse_hide;
+    sleep(1);
 
     assert_and_click "firstboot-qubes";
 
@@ -119,11 +138,17 @@ sub run {
         } else {
             assert_screen('firstboot-qubes-usbvm-unavailable', timeout => 5);
         }
+    } elsif (check_var('USBVM', 'disable')) {
+        # "disable" differs from "none" by not expecting it to be disabled
+        # automatically, but to disable it explicitly
+        assert_and_click('firstboot-qubes-usbvm-enabled', timeout => 5);
     } elsif (get_var('USBVM', 'sys-usb') eq 'sys-usb') {
         assert_screen('firstboot-qubes-usbvm-enabled', 5);
-        if (check_var('BACKEND', 'generalhw')) {
+        if (check_var('BACKEND', 'generalhw') && !check_var('HID', 'PS2')) {
             assert_screen('firstboot-qubes-usb-keyboard-allowed');
             assert_and_click('firstboot-qubes-usb-mouse-allow');
+        } elsif (check_var('HID', 'PS2')) {
+            assert_screen('firstboot-qubes-usb-keyboard-not-allowed');
         }
     } elsif (check_var('USBVM', 'sys-net')) {
         assert_screen('firstboot-qubes-usbvm-enabled', 5);
@@ -138,7 +163,7 @@ sub run {
     }
 
     my $needs_to_confirm_done = 1;
-    assert_screen(["firstboot-done", "firstboot-in-progress"], 10);
+    assert_screen(["firstboot-done", "firstboot-in-progress"], 20);
     if (match_has_tag("firstboot-done")) {
         send_key "f12";
         $needs_to_confirm_done = 0;
@@ -162,10 +187,10 @@ sub run {
     assert_screen_with_keypress "firstboot-configuring-salt", $timeout;
     assert_screen_with_keypress "firstboot-setting-network", 600;
     if ($needs_to_confirm_done) {
-        assert_screen_with_keypress("firstboot-done", 240);
+        assert_screen("firstboot-done", 240);
         send_key "f12";
     } else {
-        assert_screen_with_keypress "login-prompt-user-selected", 300;
+        assert_screen "login-prompt-user-selected", 300;
     }
 
     assert_screen "login-prompt-user-selected", 90;

@@ -23,12 +23,19 @@ use testapi;
 
 sub run {
     x11_start_program('sh -c \'echo -e "timeout:\t0:02:00" > ~/.xscreensaver\'', valid => 0);
+    x11_start_program('xfconf-query -c xfce4-screensaver -p /saver/idle-activation/delay -t int -s 2', valid => 0);
     if (check_var('KEEP_SCREENLOCKER', '1')) {
-        x11_start_program('xscreensaver-command -restart', target_match => 'desktop-clear');
+        if (check_var('VERSION', '4.2') || check_var('GUIVM', '1')) {
+            x11_start_program('xscreensaver-command -restart', target_match => 'desktop-clear');
+        }
     } elsif (!check_var("DESKTOP", "kde")) {
         x11_start_program('xscreensaver -no-splash', target_match => 'desktop-clear');
     }
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-vm-work");
     assert_and_click("menu-vm-xterm");
 
@@ -52,7 +59,7 @@ sub run {
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     save_screenshot;
     $self->SUPER::post_fail_hook;
 };

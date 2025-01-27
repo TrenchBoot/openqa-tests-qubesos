@@ -22,8 +22,10 @@ use testapi;
 
 
 sub run {
+    my ($self) = @_;
+
     # open global-settings
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
     x11_start_program('qubes-template-manager');
 
@@ -51,6 +53,10 @@ sub run {
 
     # press ok
     assert_and_click('template-ok', timeout => 20);
+    if (match_has_tag('template-apply')) {
+        assert_and_click('template-close', timeout => 20);
+    }
+
     assert_screen('desktop');
 
     # turn on again
@@ -63,7 +69,7 @@ sub run {
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     send_key('esc');
     save_screenshot;
     $self->SUPER::post_fail_hook;

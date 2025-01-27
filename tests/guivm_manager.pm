@@ -21,13 +21,19 @@ use testapi;
 
 
 sub run {
-    select_console('x11');
+    my ($self) = @_;
+
+    $self->select_gui_console;
     assert_screen "desktop";
 
     # This has two purposes:
     # 1. Test if qubes manager works
     # 2. Generate menu (#5804)
     assert_and_click("menu");
+    if (check_screen("menu-tab-favorites-active", 30)) {
+        # switch to apps tab
+        click_lastmatch();
+    }
     assert_and_click("menu-qubes-tools");
     if (match_has_tag("new-menu")) {
         assert_and_click("menu-qubes-tools-submenu");
@@ -39,6 +45,7 @@ sub run {
     send_key_until_needlematch("manager-work", 'down');
     assert_and_click("manager-work", button => 'right');
     assert_and_click("manager-vm-settings");
+    wait_still_screen;
     assert_and_click("vm-settings-applications", timeout => 60);
     assert_and_click("vm-settings-applications-refresh");
     # wait until refresh backs to normal (finish refreshing)

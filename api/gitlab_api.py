@@ -9,10 +9,10 @@
 import subprocess
 import sys
 import os
+import re
 import json
 import time
 import requests
-import zipfile
 import tempfile
 import string
 import hmac
@@ -28,7 +28,7 @@ TARGET_ISO_DIR = '/var/lib/openqa/factory/iso'
 # defaults
 config_defaults = {
     'owner_allowlist': 'QubesOS',
-    'repo_allowlist': 'qubes-continuous-integration qubes-installer-qubes-os qubes-linux-kernel qubes-vmm-xen qubes-vmm-xen-stubdom-linux',
+    'repo_allowlist': 'qubes-continuous-integration qubes-installer-qubes-os qubes-linux-kernel qubes-vmm-xen qubes-vmm-xen-stubdom-linux qubes-gui-agent-linux qubes-grub2',
     'repo_blocklist': None,
     'job_allowlist': '*',
     'user_allowlist': None,
@@ -128,7 +128,7 @@ def verify_webhook_obj():
 
     return webhook_obj
 
-def get_job_from_pr(pr_details):
+def get_job_from_pr(pr_details, job_name="publish:repo"):
     r = requests.get(pr_details['_links']['statuses']['href'])
     r.raise_for_status()
     for status in r.json():
@@ -142,7 +142,7 @@ def get_job_from_pr(pr_details):
         for job in r.json():
             if job['status'] != 'success':
                 continue
-            if 'publish:repo' not in job['name']:
+            if job_name not in job['name']:
                 continue
             return job['web_url']
     return None
@@ -159,7 +159,7 @@ def run_test():
 
     print(repr(req_values))
 
-    version = req_values.get('VERSION') or '4.2'
+    version = req_values.get('VERSION') or '4.3'
     buildid = time.strftime('%Y%m%d%H-') + version
     # cannot serve repo directly from gitlab, because it refuses connections via Tor :/
     repo_url = req_values['REPO_JOB'] + '/artifacts/raw/repo'
@@ -171,8 +171,8 @@ def run_test():
             f.flush()
             repo_dir = TARGET_REPO_DIR + '/' + buildid
             os.mkdir(repo_dir)
-            with zipfile.ZipFile(f.name, 'r') as repo_zip:
-                repo_zip.extractall(repo_dir)
+            subprocess.check_output(
+                ['unzip', '-q', f.name, '-d', repo_dir])
             # get rid of 'repo' dir nesting
             for subdir in os.listdir(repo_dir + '/repo'):
                 os.rename(repo_dir + '/repo/' + subdir, repo_dir + '/' + subdir)
@@ -193,6 +193,14 @@ def run_test():
         values['SELINUX_TEMPLATES'] = req_values['SELINUX_TEMPLATES']
     if 'TEST_TEMPLATES' in req_values:
         values['TEST_TEMPLATES'] = req_values['TEST_TEMPLATES']
+    if 'UPDATE_TEMPLATES' in req_values:
+        values['UPDATE_TEMPLATES'] = req_values['UPDATE_TEMPLATES']
+    if 'FLAVOR' in req_values and req_values['FLAVOR'] in ('pull-requests', 'kernel', 'whonix', 'templates'):
+        values['FLAVOR'] = req_values['FLAVOR']
+    if 'KERNEL_VERSION' in req_values and req_values['KERNEL_VERSION'] in ('stable', 'latest'):
+        values['KERNEL_VERSION'] = req_values['KERNEL_VERSION']
+    if 'QUBES_TEST_MGMT_TPL' in req_values:
+        values['QUBES_TEST_MGMT_TPL'] = req_values['QUBES_TEST_MGMT_TPL'];
 
     subprocess.check_call([
         'openqa-cli', 'api', '-X', 'POST',
@@ -213,12 +221,19 @@ def github_event():
             user = webhook_obj['comment']['user']['login']
             if user.lower() not in config['user_allowlist'].lower().split():
                 return respond(200, 'comment of this user ignored')
-        if webhook_obj['comment']['body'].lower() == 'openqarun':
+        if webhook_obj['comment']['body'].lower().startswith('openqarun'):
             return run_test_pr(webhook_obj['comment'])
 
     return respond(200, 'nothing to do')
 
 def run_test_pr(comment_details):
+    comment_body = comment_details['body'].strip()
+    comment_params = dict([
+        param.split("=", 1)
+        for param in comment_body.split(" ")
+        if "=" in param and param[0].isupper()
+    ])
+
     # get PR info
     issue_url = comment_details['issue_url']
     r = requests.get(issue_url)
@@ -228,13 +243,16 @@ def run_test_pr(comment_details):
     r.raise_for_status()
     pr_details = r.json()
 
+    version = comment_params.get("VERSION", "4.3")
+    if not re.match(r"\A[0-9]\.[0-9]\Z", version):
+        return respond(400, "invalid VERSION value")
+
     # get associated gitlab job
-    repo_job = get_job_from_pr(pr_details)
+    repo_job = get_job_from_pr(pr_details, job_name=f"r{version}:publish:repo")
     if not repo_job:
         return respond(404, "build not found")
 
-    version = '4.2'
-    buildid = time.strftime('%Y%m%d%H-') + version
+    buildid = time.strftime('%Y%m%d%H%M-') + version
     # cannot serve repo directly from gitlab, because it refuses connections via Tor :/
     repo_url = repo_job + '/artifacts/raw/repo'
     with requests.get(repo_job + '/artifacts/download', stream=True) as r:
@@ -245,8 +263,8 @@ def run_test_pr(comment_details):
             f.flush()
             repo_dir = TARGET_REPO_DIR + '/' + buildid
             os.mkdir(repo_dir)
-            with zipfile.ZipFile(f.name, 'r') as repo_zip:
-                repo_zip.extractall(repo_dir)
+            subprocess.check_output(
+                ['unzip', '-q', f.name, '-d', repo_dir])
             # get rid of 'repo' dir nesting
             for subdir in os.listdir(repo_dir + '/repo'):
                 os.rename(repo_dir + '/repo/' + subdir, repo_dir + '/' + subdir)
@@ -256,6 +274,8 @@ def run_test_pr(comment_details):
     values['VERSION'] = version
     if pr_details['base']['repo']['name'] in (
             'qubes-linux-kernel',
+            'qubes-gui-agent-linux',
+            'qubes-grub2',
             'qubes-vmm-xen',
             'qubes-vmm-xen-stubdom-linux'):
         values['FLAVOR'] = 'kernel'

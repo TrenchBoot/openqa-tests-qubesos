@@ -23,8 +23,10 @@ use serial_terminal;
 
 
 sub run {
+    my ($self) = @_;
+
     # open global-settings
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
 
     # run xterm
@@ -36,8 +38,11 @@ sub run {
     assert_script_run('qvm-run work true');
 
     # check if devices notify about connecting
-    assert_and_click('qui-notifications-devices', timeout => 20);
-    send_key('down');
+    assert_and_click('qui-devices-open', timeout => 20);
+    if (!check_screen('qui-devices-mic-selected')) {
+        # open a device
+        send_key('down');
+    }
     send_key('right');
     send_key('ret');
     assert_screen('qui-notification-device-attach', 60);
@@ -49,12 +54,12 @@ sub run {
     # turn off work domain
     select_root_console();
     script_run('qvm-shutdown --wait work', 200);
-    select_console('x11');
+    $self->select_gui_console;
 }
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     type_string("exit\n");
     x11_start_program('qvm-shutdown work');
     save_screenshot;

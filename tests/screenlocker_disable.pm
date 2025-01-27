@@ -21,12 +21,13 @@ use testapi;
 
 sub run {
     assert_screen("desktop");
-    x11_start_program('xscreensaver-command -exit', target_match => 'desktop-clear');
+    x11_start_program('env xscreensaver-command -exit', target_match => 'desktop-clear');
+    x11_start_program('env xfce4-screensaver-command --exit', target_match => 'desktop-clear');
 }
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     save_screenshot;
     $self->SUPER::post_fail_hook;
 };

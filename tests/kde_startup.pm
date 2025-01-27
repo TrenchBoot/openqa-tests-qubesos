@@ -22,7 +22,9 @@ use serial_terminal;
 
 
 sub run {
-    select_console('x11');
+    my ($self) = @_;
+
+    $self->select_gui_console;
 
     assert_and_click("panel-user-menu");
     assert_and_click("panel-user-menu-logout");
@@ -42,6 +44,9 @@ sub run {
         assert_and_click("kde-welcome");
     }
     assert_screen('x11');
+    # Plasma started from lightdm(X11) on tty1 takes tty2:
+    # https://github.com/sddm/sddm/issues/1409
+    console("x11")->set_tty(2);
 }
 
 sub post_fail_hook {

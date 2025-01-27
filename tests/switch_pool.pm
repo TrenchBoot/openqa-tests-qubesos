@@ -24,7 +24,7 @@ sub run {
     my ($self) = @_;
     my $failed = 0;
 
-    select_console('x11');
+    $self->select_gui_console;
     x11_start_program('xterm');
     send_key('alt-f10');
     become_root;
@@ -46,7 +46,7 @@ sub run {
         assert_script_run('mount /var/lib/qubes-pool');
         assert_script_run('qvm-pool add --option dir_path=/var/lib/qubes-pool pool-test file-reflink');
     } elsif (get_var('PARTITIONING') eq 'xfs') {
-        assert_script_run('qubes-dom0-update -y xfsprogs', timeout => 300);
+        assert_script_run('rpm -q xfsprogs || qubes-dom0-update -y xfsprogs', timeout => 300);
         assert_script_run('printf "label: gpt\n,,L" | sfdisk /dev/sdb');
         assert_script_run('mkfs.xfs /dev/sdb1');
         assert_script_run('printf "/dev/sdb1 /var/lib/qubes-pool xfs defaults 0 0" >> /etc/fstab');
@@ -54,10 +54,10 @@ sub run {
         assert_script_run('mount /var/lib/qubes-pool');
         assert_script_run('qvm-pool add --option dir_path=/var/lib/qubes-pool pool-test file-reflink');
     } elsif (get_var('PARTITIONING') eq 'zfs') {
-        assert_script_run('curl https://zfsonlinux.org/fedora/zfs-release-2-2.fc$(rpm --eval "%{fedora}").noarch.rpm > zfs-release.rpm');
+        assert_script_run('curl https://zfsonlinux.org/fedora/zfs-release-2-6.fc$(rpm --eval "%{fedora}").noarch.rpm > zfs-release.rpm');
         assert_script_run('dnf install -y ./zfs-release.rpm');
         assert_script_run('sed -i "s/\\\\\\$releasever/$(rpm --eval "%{fedora}")/" /etc/yum.repos.d/zfs.repo');
-        assert_script_run('rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-openzfs');
+        assert_script_run('rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-openzfs-fedora-$(rpm --eval "%{fedora}")');
         assert_script_run('qubes-dom0-update -y zfs', timeout => 900);
         assert_script_run('modprobe zfs zfs_arc_max=67108864');
 

@@ -68,13 +68,21 @@ sub run {
     } elsif (check_var("MACHINE", "hw8")) {
         $extra_xen_opts .= ' dbgp=xhci@pci00:14.0,share=yes';
         $serial_console = "xhci";
+    } elsif (check_var("MACHINE", "hw9")) {
+        $extra_xen_opts .= ' com1=115200,8n1';
     } elsif (check_var("MACHINE", "hw11")) {
         $extra_xen_opts .= ' com1=115200,8n1,pci';
     } elsif (check_var("MACHINE", "hw12")) {
-        $extra_xen_opts .= ' dbgp=xhci@pcic1:00.3,share=yes';
+        $extra_xen_opts .= ' dbgp=xhci@pcic1:00.3,share=yes ioapic_ack=new';
         $serial_console = "xhci";
     } elsif (check_var("MACHINE", "hw13")) {
         $extra_xen_opts .= ' com1=115200,8n1';
+    } elsif (check_var("MACHINE", "hw15")) {
+        $extra_xen_opts .= ' dbgp=xhci@pci00:14.0,share=yes';
+        $serial_console = "xhci";
+    } elsif (check_var("MACHINE", "hw16")) {
+        # not really AMT, but LPSS on PCI bus 0
+        $extra_xen_opts .= ' com1=115200,8n1,amt';
     }
     script_run "sed -i -e 's/console=none/console=vga,$serial_console $extra_xen_opts/' /mnt/sysimage/boot/grub2/grub.cfg";
     script_run "sed -i -e 's/console=none/console=vga,$serial_console $extra_xen_opts/' /mnt/sysimage/boot/efi/EFI/qubes/grub.cfg";
@@ -102,8 +110,10 @@ sub run {
     my $policy_path = "/etc/qubes/policy.d/30-openqa.policy";
     #script_run "echo 'qubes.InputKeyboard * sys-usb dom0 allow' > /mnt/sysimage$policy_path";
     #script_run "echo 'qubes.InputMouse * sys-usb dom0 allow' >> /mnt/sysimage$policy_path";
-    script_run "echo 'qubes.InputTablet * sys-usb dom0 allow' >> /mnt/sysimage$policy_path";
-    script_run "echo 'qubes.InputTablet * sys-net dom0 allow' >> /mnt/sysimage$policy_path";
+    if (!check_var('HID', 'PS2')) {
+        script_run "echo 'qubes.InputTablet * sys-usb dom0 allow' >> /mnt/sysimage$policy_path";
+        script_run "echo 'qubes.InputTablet * sys-net dom0 allow' >> /mnt/sysimage$policy_path";
+    }
 
     # when changing here, update release_upgrade.pm too
     my $sed_enable_dom0_console_log = 'sed -i -e \'s:quiet:console=hvc0 console=tty0:g\'';
@@ -158,7 +168,9 @@ sub run {
 
     type_string "sync\n";
     select_console('installation');
-    #eject_cd;
+    if (check_var("MACHINE", "hw3")) {
+        eject_cd;
+    }
     #power 'reset';
     assert_and_click 'installer-install-done-reboot';
     reset_consoles();

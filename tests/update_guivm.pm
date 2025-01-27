@@ -22,16 +22,26 @@ use networking;
 
 sub run {
     my ($self) = @_;
+    my $state = 'qvm.sys-gui';
+    my $vm = 'sys-gui';
 
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
     x11_start_program('xterm');
     send_key('alt-f10');
     become_root;
     curl_via_netvm;
 
-    assert_script_run('qubesctl top.enable qvm.sys-gui');
-    assert_script_run('qubesctl top.enable qvm.sys-gui pillar=True');
+    if (check_var('GUIVM_VNC', '1')) {
+        $state = 'qvm.sys-gui-vnc';
+        $vm = 'sys-gui-vnc';
+    } elsif (check_var('GUIVM_GPU', '1')) {
+        $state = 'qvm.sys-gui-gpu';
+        $vm = 'sys-gui-gpu';
+    }
+
+    assert_script_run("qubesctl top.enable $state");
+    assert_script_run("qubesctl top.enable $state pillar=True");
 
     assert_script_run('(set -o pipefail; qubesctl --all --show-output state.highstate 2>&1 | tee qubesctl-sys-gui.log)', timeout => 9000);
     upload_logs("qubesctl-sys-gui.log");
@@ -40,7 +50,13 @@ sub run {
     script_run('rm -f /srv/salt/_tops/base/*');
 
     # disable autostart until all tests modules can deal with it
-    assert_script_run('qvm-prefs sys-gui autostart false');
+    assert_script_run("qvm-prefs $vm autostart false");
+    if (check_var('GUIVM_VNC', '1')) {
+        # setup forwarding to sys-gui-vnc
+        assert_script_run("echo qvm-connect-tcp 5900:\@default:5900 | qvm-run -pu root sys-net tee -a /rw/config/rc.local");
+        assert_script_run("echo nft add rule ip qubes custom-input tcp dport 5900 accept | qvm-run -pu root sys-net tee -a /rw/config/rc.local");
+        assert_script_run("echo qubes.ConnectTCP +5900 sys-net \@default allow target=sys-gui-vnc >> /etc/qubes/policy.d/30-user.policy");
+    }
 
     type_string("exit\n");
     type_string("exit\n");

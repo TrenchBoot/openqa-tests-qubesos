@@ -1,0 +1,20 @@
+{
+  "area": [
+    {
+      "height": 37,
+      "width": 370,
+      "ypos": 570,
+      "type": "match",
+      "xpos": 277,
+      "click_point": {
+        "xpos": 316,
+        "ypos": 15.5
+      }
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "ENV-VERSION-4.3",
+    "global-config-fullscreen-open"
+  ]
+}

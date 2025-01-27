@@ -26,9 +26,14 @@ sub run {
 
     # wait for resolution change (on generalhw, there is a background process
     # that calls xrandr shortly after Xorg startup)
-    sleep 3;
-    # Xorg driver needs few moves to callibrate
+    sleep 5;
+    # Xorg driver needs few moves to detect tool (sub)device
     mouse_set(0, 0);
+    sleep 1;
+    mouse_set(100, 100);
+    sleep 1;
+    mouse_click();
+    sleep 1;
     mouse_hide;
     save_screenshot;
 
@@ -37,10 +42,10 @@ sub run {
     }
 
     send_key 'f12';
-    if (check_screen('installer-prerelease', 10)) {
+    if (check_screen('installer-prerelease', 20)) {
         assert_and_click 'installer-prerelease';
     }
-    if (check_screen 'installer-unsupported-hardware', 10) {
+    if (check_screen 'installer-unsupported-hardware', 20) {
         if (check_var("BACKEND", "qemu")) {
             assert_and_click 'installer-unsupported-hardware';
         } else {

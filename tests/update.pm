@@ -23,7 +23,7 @@ use networking;
 sub run {
     my ($self) = @_;
 
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
     x11_start_program('xterm');
     send_key('alt-f10');
@@ -105,15 +105,7 @@ sub run {
     # log package versions
     my $list_tpls_cmd = 'qvm-template list --installed --machine-readable | awk -F\'|\' \'{ print "qubes-template-" $2 "-" gensub("0:", "", 1, $3) }\'';
     $self->save_and_upload_log("(rpm -qa qubes-template-*; $list_tpls_cmd)", 'template-versions.txt');
-    $self->save_and_upload_log('rpm -qa', 'dom0-packages.txt');
-    my $templates = script_output('qvm-ls --raw-data --fields name,klass');
-    foreach (split /\n/, $templates) {
-        next unless /Template/;
-        s/\|.*//;
-        $self->save_and_upload_log("qvm-run --no-gui -ap $_ 'rpm -qa; dpkg -l; true'",
-                "template-$_-packages.txt", {timeout =>90});
-        assert_script_run("qvm-shutdown --wait $_", timeout => 90);
-    }
+    $self->upload_packages_versions;
 
     if (check_var('RESTART_AFTER_UPDATE', '1')) {
         type_string("reboot\n");

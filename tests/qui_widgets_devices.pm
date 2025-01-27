@@ -22,8 +22,10 @@ use testapi;
 
 
 sub run {
+    my ($self) = @_;
+
     # open global-settings
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
 
     # check if widget opened, open it
@@ -34,8 +36,13 @@ sub run {
     send_key('esc');
     assert_and_click('qui-devices-open', timeout => 20);
 
-    # open a device
-    send_key('down');
+    if (check_screen('qui-devices-mic-selected')) {
+        # mic already selected, open submenu
+        send_key('right');
+    } else {
+        # open a device
+        send_key('down');
+    }
     assert_screen('qui-devices-dev-opened', timeout => 20);
 
     # close the widget
@@ -44,7 +51,7 @@ sub run {
 
 sub post_fail_hook {
     my ($self) = @_;
-    select_console('x11');
+    $self->select_gui_console;
     send_key('esc');
     save_screenshot;
     $self->SUPER::post_fail_hook;

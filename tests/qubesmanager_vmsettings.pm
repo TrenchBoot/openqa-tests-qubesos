@@ -22,8 +22,10 @@ use testapi;
 
 
 sub run {
+    my ($self) = @_;
+
     # open global-settings
-    select_console('x11');
+    $self->select_gui_console;
     assert_screen "desktop";
     x11_start_program('qubes-vm-settings work');
 
@@ -168,7 +170,7 @@ sub run {
 
     # applications
     assert_and_click('vm-settings-applications-tab');
-    assert_and_click(['vm-settings-apps-dolphin-select', 'vm-settings-apps-thunar-select']);
+    assert_and_click(['vm-settings-apps-dolphin-select', 'vm-settings-apps-thunar-select', 'vm-settings-apps-start-qube-select']);
     assert_and_click('vm-settings-apps-add');
 
     # confirm

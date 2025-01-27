@@ -24,7 +24,7 @@ sub run {
     my ($self) = @_;
     my $failed = 0;
 
-    select_console('x11');
+    $self->select_gui_console;
     x11_start_program('xterm');
     send_key('alt-f10');
     curl_via_netvm;
@@ -49,11 +49,12 @@ sub run {
         assert_script_run("export QUBES_TEST_TEMPLATES='" . get_var('TEST_TEMPLATES') . "'");
     }
 
-    foreach ('QUBES_TEST_EXTRA_INCLUDE', 'QUBES_TEST_EXTRA_EXCLUDE') {
+    foreach ('QUBES_TEST_EXTRA_INCLUDE', 'QUBES_TEST_EXTRA_EXCLUDE', 'QUBES_TEST_MGMT_TPL') {
         if (get_var($_)) {
             assert_script_run("export $_='" . get_var($_) . "'");
         }
     }
+    assert_script_run("export QUBES_TEST_SKIP_KERNEL_INSTALL=1");
     if (check_var("VERSION", "4.1")) {
         assert_script_run("export DEFAULT_LVM_POOL=qubes_dom0/vm-pool");
     }

@@ -65,6 +65,13 @@ sub init_consoles {
 
     $self->add_console('x11',            'tty-console', {tty => 1});
 
+    $self->add_console('guivm-vnc',      'vnc-base',    {
+                hostname => 'localhost',
+                connect_timeout => 3,
+                port => 5555,
+                description => "sys-gui's VNC",
+    });
+
     return;
 }
 
@@ -130,12 +137,6 @@ sub console_selected {
     # locked, display manager is waiting for login, etc.
     #return ensure_unlocked_desktop if $args{tags} =~ /x11/;
     assert_screen($args{tags}, no_wait => 1);
-
-    if (check_var('BACKEND', 'generalhw') and $console =~ m/(x11|installation)/) {
-        # wiggle mouse a bit, for some reason needed...
-        mouse_set(0, 0);
-        mouse_hide;
-    }
 }
 
 sub handle_password_prompt {
@@ -300,19 +301,19 @@ sub script_run {
     if (testapi::is_serial_terminal) {
         testapi::wait_serial($self->{serial_term_prompt}, no_regex => 1, quiet => $args{quiet});
     }
-    testapi::type_string("$cmd", max_interval => 100);
+    testapi::type_string("$cmd", max_interval => 150);
     if ($args{timeout} > 0) {
         die "Terminator '&' found in script_run call. script_run can not check script success. Use 'background_script_run' instead."
           if $cmd =~ qr/(?<!\\)&$/;
         my $str = testapi::hashed_string("SR" . $cmd . $args{timeout});
         my $marker = "; echo $str-\$?-" . ($args{output} ? "Comment: $args{output}" : '');
         if (testapi::is_serial_terminal) {
-            testapi::type_string($marker, max_interval => 100);
+            testapi::type_string($marker, max_interval => 150);
             testapi::wait_serial($cmd . $marker, no_regex => 1, quiet => $args{quiet});
             testapi::type_string("\n");
         }
         else {
-            testapi::type_string("$marker > /dev/$testapi::serialdev\n", max_interval => 100);
+            testapi::type_string("$marker > /dev/$testapi::serialdev\n", max_interval => 150);
         }
         my $res = testapi::wait_serial(qr/$str-\d+-/, timeout => $args{timeout}, quiet => $args{quiet});
         return unless $res;
