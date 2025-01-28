@@ -20,24 +20,7 @@ use strict;
 use testapi;
 
 sub run {
-    # assert_and_click 'installer-main-hub-target';
-    # Manually move the mouse where `installer-main-hub-target` should
-    sleep 2;
-    mouse_set 785, 210;
-    sleep 2;
-    mouse_click;
-
-    while (check_screen 'installer-select-medium', 5) {
-        assert_and_click 'installer-select-medium';
-        sleep 10;
-        # assert_and_click 'installer-main-hub-target';
-        # Manually move the mouse where `installer-main-hub-target` should
-        sleep 2;
-        mouse_set 785, 210;
-        sleep 2;
-        mouse_click;
-
-    }
+    assert_and_click 'installer-main-hub-target';
     assert_screen 'installer-disk-spoke';
     if (check_var('NUMDISKS', '2')) {
         assert_and_click 'installer-select-disk';
