@@ -1,0 +1,23 @@
+{
+  "area": [
+    {
+      "width": 74,
+      "ypos": 9,
+      "height": 29,
+      "type": "match",
+      "xpos": 258
+    },
+    {
+      "ypos": 131,
+      "height": 41,
+      "width": 499,
+      "type": "match",
+      "xpos": 300
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "ENV-VERSION-4-2",
+    "installer-main-hub"
+  ]
+}

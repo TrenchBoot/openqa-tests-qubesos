@@ -1,0 +1,23 @@
+{
+  "area": [
+    {
+      "width": 95,
+      "ypos": 8,
+      "height": 18,
+      "type": "match",
+      "xpos": 4
+    },
+    {
+      "height": 20,
+      "ypos": 741,
+      "width": 235,
+      "xpos": 27,
+      "type": "match"
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "ENV-VERSION-4.3",
+    "installer-user-weak-pass"
+  ]
+}

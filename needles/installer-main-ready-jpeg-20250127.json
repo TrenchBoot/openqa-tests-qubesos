@@ -1,0 +1,22 @@
+{
+  "area": [
+    {
+      "xpos": 166,
+      "type": "match",
+      "height": 27,
+      "ypos": 11,
+      "width": 164
+    },
+    {
+      "width": 124,
+      "height": 40,
+      "ypos": 692,
+      "xpos": 898,
+      "type": "match"
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "installer-main-ready"
+  ]
+}

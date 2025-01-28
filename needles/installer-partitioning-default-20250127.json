@@ -1,0 +1,16 @@
+{
+  "area": [
+    {
+      "xpos": 16,
+      "ypos": 499,
+      "width": 72,
+      "height": 24,
+      "type": "match"
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "installer-disk-spoke",
+    "installer-partitioning-default"
+  ]
+}

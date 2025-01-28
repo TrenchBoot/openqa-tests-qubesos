@@ -1,0 +1,26 @@
+{
+  "area": [
+    {
+      "width": 107,
+      "height": 24,
+      "ypos": 437,
+      "xpos": 309,
+      "type": "match"
+    },
+    {
+      "type": "match",
+      "xpos": 347,
+      "width": 92,
+      "ypos": 559,
+      "height": 25,
+      "click_point": {
+        "xpos": 36,
+        "ypos": 17
+      }
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "installer-install-hub-user"
+  ]
+}
