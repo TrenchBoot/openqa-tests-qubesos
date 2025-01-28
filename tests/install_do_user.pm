@@ -34,6 +34,11 @@ sub run {
         }
     }
 
+    if (check_screen('software-selection-changed')) {
+        assert_and_click('software-selection-changed');
+        send_key 'f12';
+    }
+
     my $timeout = 1500;
     if (check_var('INSTALL_TEMPLATES', 'all')) {
         $timeout += 4 * 240;
