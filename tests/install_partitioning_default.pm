@@ -21,15 +21,10 @@ use testapi;
 
 sub run {
     assert_and_click 'installer-main-hub-target';
-    if (check_screen 'installer-select-medium', 10) {
+    while (check_screen 'installer-select-medium', 5) {
         assert_and_click 'installer-select-medium';
-        sleep 2;
+        sleep 10;
         assert_and_click 'installer-main-hub-target';
-        while(check_screen 'installer-main-hub-target') {
-            assert_and_click 'installer-main-hub-target';
-            sleep 1;
-        }
-        sleep 2;
     }
     assert_screen 'installer-disk-spoke';
     if (check_var('NUMDISKS', '2')) {
