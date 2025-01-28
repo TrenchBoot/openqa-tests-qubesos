@@ -100,6 +100,7 @@ sub run {
         send_key 'ret';
 
         assert_screen 'install-grub-qubes', 10;
+        sleep 1;
         # Select first install option
         send_key 'pgup';
         send_key 'ret';

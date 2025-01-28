@@ -23,6 +23,7 @@ sub run {
     assert_and_click 'installer-main-hub-target';
     if (check_screen 'installer-select-medium', 10) {
         assert_and_click 'installer-select-medium';
+        sleep 1;
         assert_and_click 'installer-main-hub-target';
     }
     assert_screen 'installer-disk-spoke';
