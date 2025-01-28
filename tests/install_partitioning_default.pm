@@ -20,7 +20,9 @@ use strict;
 use testapi;
 
 sub run {
+    wait_still_screen 3;
     assert_and_click 'installer-main-hub-target';
+    wait_still_screen 3;
     while (check_screen 'installer-select-medium', 5) {
         assert_and_click 'installer-select-medium';
         sleep 10;
