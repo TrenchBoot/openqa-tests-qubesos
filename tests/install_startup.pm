@@ -94,9 +94,8 @@ sub run {
 
         assert_screen 'bootmenu-hp', 10;
         # Assuming the installation drive is 2'nd on the bootmenu
-        for my $i (0 .. 1) {
-            send_key 'down';
-        }
+        send_key 'pgup';
+        send_key 'down';
         send_key 'ret';
 
         assert_screen 'install-grub-qubes', 10;
