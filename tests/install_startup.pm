@@ -87,23 +87,6 @@ sub run {
         heads_boot_usb;
     } elsif (check_var('MACHINE', 'optiplex')) {
         ipxe_boot('dasharo');
-    } elsif (check_var('MACHINE', 'hpt630v1')) {
-        # No iPXE, QubesOS bootdrive has to be inserted
-        assert_screen 'bootloader-hp', 10;
-        send_key 'f9';
-
-        assert_screen 'bootmenu-hp', 10;
-        # Assuming the installation drive is 2'nd on the bootmenu
-        send_key 'pgup';
-        send_key 'down';
-        send_key 'ret';
-
-        assert_screen 'install-grub-qubes', 10;
-        sleep 1;
-        # Select first install option
-        send_key 'pgup';
-        send_key 'ret';
-
     } elsif (check_var('MACHINE', 'supermicro')) {
         # http://<openqa-ip>:8080/iso/     -- mounted ISO image
         # http://<openqa-ip>:8080/ipxe     -- iPXE script

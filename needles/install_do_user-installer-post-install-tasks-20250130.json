@@ -1,0 +1,27 @@
+{
+  "area": [
+    {
+      "xpos": 160,
+      "type": "match",
+      "height": 24,
+      "ypos": 362,
+      "width": 87
+    },
+    {
+      "xpos": 883,
+      "type": "match",
+      "width": 138,
+      "height": 40,
+      "ypos": 718,
+      "click_point": {
+        "xpos": 69,
+        "ypos": 20
+      }
+    }
+  ],
+  "properties": [],
+  "tags": [
+    "installer-install-done-reboot",
+    "installer-post-install-tasks"
+  ]
+}
